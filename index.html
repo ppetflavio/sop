@@ -307,6 +307,46 @@ tbody tr:hover td.ms{background:rgba(14,158,142,.10);}
   .msk-v{font-size:14px;}
 }
 
+
+/* ══ Filter Bar ══ */
+.filter-bar{display:flex;flex-wrap:wrap;gap:8px;padding:14px 16px;
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);margin-bottom:14px;align-items:center;
+  box-shadow:var(--sh);}
+.f-input{flex:1;min-width:200px;padding:7px 12px;
+  border:1px solid var(--border);border-radius:6px;
+  font-size:13px;font-family:'Nunito',sans-serif;outline:none;}
+.f-input:focus{border-color:var(--purple);}
+.f-sel{padding:7px 10px;border:1px solid var(--border);
+  border-radius:6px;font-size:12px;font-family:'Nunito',sans-serif;
+  background:var(--white);cursor:pointer;outline:none;}
+.f-sel:focus{border-color:var(--purple);}
+.f-clear{padding:7px 14px;background:#F1F3F5;border:1px solid var(--border);
+  border-radius:6px;font-size:12px;cursor:pointer;font-weight:700;
+  color:var(--t2);transition:background .15s;}
+.f-clear:hover{background:#E2E8F0;}
+.f-count{font-size:12px;color:var(--t2);font-weight:700;white-space:nowrap;margin-left:auto;}
+
+/* ══ Sortable headers ══ */
+th.sortable{cursor:pointer;user-select:none;white-space:nowrap;}
+th.sortable:hover{background:rgba(107,63,160,.08);}
+th.sort-asc::after{content:' ▲';font-size:10px;color:var(--purple);}
+th.sort-desc::after{content:' ▼';font-size:10px;color:var(--purple);}
+
+/* ══ Status badges ══ */
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;
+  font-size:10px;font-weight:700;white-space:nowrap;}
+.badge-ok{background:#E8F5E9;color:#2E7D32;}
+.badge-warn{background:#FFF3CD;color:#856404;}
+.badge-err{background:#FDEAEA;color:#C62828;}
+.badge-neu{background:#F1F3F5;color:#495057;}
+
+@media(max-width:600px){
+  .filter-bar{gap:6px;padding:10px;}
+  .f-input{min-width:100%;flex:unset;}
+  .f-sel{font-size:11px;padding:6px 8px;}
+}
+
 </style>
 </head>
 <body>
@@ -337,6 +377,7 @@ tbody tr:hover td.ms{background:rgba(14,158,142,.10);}
   <button class="nb" onclick="showTab('meli',this);bC('997')">🟡 Meli Full</button>
   <button class="nb" onclick="showTab('mes-seg',this)">📅 Mês Seguinte</button>
   <button class="nb" onclick="showTab('alertas',this)">🚨 Alertas S&OP</button>
+  <button class="nb" onclick="showTab('todos',this)">📋 Todos os Produtos</button>
 </nav>
 
 <div class="main">
@@ -408,13 +449,17 @@ tbody tr:hover td.ms{background:rgba(14,158,142,.10);}
 
   <!-- Categoria -->
   <div class="sh"><div class="sbar p"></div><div class="stitle">Necessidade por Categoria</div><span class="ssub">Consolidado todos os canais</span></div>
+  <div class="thr" style="padding:8px 0 8px">
+    <input class="srch" type="text" placeholder="🔍 Filtrar categoria..." onkeyup="fT('tbl-ms-cat',this.value,'ft-mscat')">
+    <button class="btn btn-g" onclick="xT('tbl-ms-cat','Categorias_MesSeg')">⬇ Excel</button>
+  </div>
   <div class="to">
     <div class="ts">
       <table id="tbl-ms-cat">
         <thead><tr>
           <th>Categoria</th>
-          <th class="r">Meta Atual</th><th class="r">Proj. Atual</th><th class="r">Receita Atual</th>
-          <th class="r ms">Meta Seg.</th><th class="r ms">Estq. Seg.</th>
+          <th class="r">Meta Atual (Q)</th><th class="r">Meta Atual (R$)</th><th class="r">Proj. Atual</th><th class="r">Receita Atual</th>
+          <th class="r ms">Meta Seg. (Q)</th><th class="r ms">Meta Seg. (R$)</th><th class="r ms">Estq. Mín.</th>
           <th class="r ms" onclick="sT('tbl-ms-cat',6)">Nec. Compra ↕</th>
           <th class="r ms" onclick="sT('tbl-ms-cat',7)">Peso Kg ↕</th>
           <th class="r ms" onclick="sT('tbl-ms-cat',8)">Invest. R$ ↕</th>
@@ -448,15 +493,18 @@ tbody tr:hover td.ms{background:rgba(14,158,142,.10);}
           <th>Comprador</th><th>Pareto</th>
           <th class="r">Peso Unit.(Kg)</th>
           <th class="r">Custo Unit.</th>
+          <th class="r">Meta Atual (Q)</th>
+          <th class="r">Meta Atual (R$)</th>
           <th class="r">Projeção Atual</th>
           <th class="r ms">Meta Seg.(Q)</th>
-          <th class="r ms">Estq.Seg.(Q)</th>
-          <th class="r ms">EstqSeg.Seg.(Q)</th>
+          <th class="r ms">Meta Seg.(R$)</th>
+          <th class="r ms">Estq.Mín.(Q)</th>
+          <th class="r ms">Estq.Mín.Seg.(Q)</th>
           <th class="r ms">Ped.Pend.</th>
           <th class="r ms">LT(d)</th>
-          <th class="r ms" onclick="sT('tbl-ms-all',15)">Nec.Compra ↕</th>
-          <th class="r ms" onclick="sT('tbl-ms-all',16)">Peso Total Kg ↕</th>
-          <th class="r ms" onclick="sT('tbl-ms-all',17)">Invest. R$ ↕</th>
+          <th class="r ms" onclick="sT('tbl-ms-all',18)">Nec.Compra ↕</th>
+          <th class="r ms" onclick="sT('tbl-ms-all',19)">Peso Total Kg ↕</th>
+          <th class="r ms" onclick="sT('tbl-ms-all',20)">Invest. R$ ↕</th>
           <th class="ms">Status Estq.</th><th class="ms">Status Venda</th>
         </tr></thead>
         <tbody id="body-ms-all"></tbody>
@@ -514,7 +562,71 @@ tbody tr:hover td.ms{background:rgba(14,158,142,.10);}
       </div>
     </div>
     <div class="mb" id="mbody"></div>
+  
+<!-- ══════════════ TODOS OS PRODUTOS ══════════════ -->
+<div class="tp" id="tab-todos">
+
+  <div class="sh">
+    <div class="sbar p"></div>
+    <div class="stxt">
+      <span class="sec-title">📋 Todos os Produtos</span>
+      <span class="sec-sub" id="todos-sub">Todos os SKUs · Todos os canais</span>
+    </div>
   </div>
+
+  <div class="filter-bar">
+    <input class="f-input" type="text" id="f-search" placeholder="🔍 Produto, descrição, marca..." oninput="filterTodos()">
+    <select class="f-sel" id="f-canal" onchange="filterTodos()"><option value="">Todos os canais</option><option>Marketplace</option><option>Shopee Full</option><option>Amazon Full</option><option>Meli Full</option></select>
+    <select class="f-sel" id="f-cat" onchange="filterTodos()"><option value="">Todas categorias</option></select>
+    <select class="f-sel" id="f-comp" onchange="filterTodos()"><option value="">Todos compradores</option></select>
+    <select class="f-sel" id="f-stv" onchange="filterTodos()"><option value="">Status venda</option><option>Acima Meta</option><option>Abaixo Meta</option><option>Sem Meta</option></select>
+    <select class="f-sel" id="f-ste" onchange="filterTodos()"><option value="">Status estoque</option><option>Estoque Sobra</option><option>Estoque Falta</option><option>Estoque Zerado</option></select>
+    <select class="f-sel" id="f-pareto" onchange="filterTodos()"><option value="">Pareto</option><option>Sim</option><option>Não</option></select>
+    <button class="f-clear" onclick="clearFilterTodos()">✕ Limpar</button>
+    <span class="f-count" id="f-count">—</span>
+  </div>
+
+  <div class="to">
+    <div class="thr" style="padding:8px 16px;border-bottom:1px solid var(--border)">
+      <button class="btn btn-g" onclick="xT('tbl-todos','Todos_Produtos')">⬇ Excel</button>
+    </div>
+    <div class="ts" id="ts-todos">
+      <table id="tbl-todos">
+        <thead><tr>
+          <th onclick="sortTodos('Canal')" class="sortable">Canal</th>
+          <th onclick="sortTodos('Produto')" class="sortable">SKU</th>
+          <th>Descrição</th>
+          <th onclick="sortTodos('Marca')" class="sortable">Marca</th>
+          <th onclick="sortTodos('Categoria')" class="sortable">Categoria</th>
+          <th onclick="sortTodos('Comprador')" class="sortable">Comprador</th>
+          <th onclick="sortTodos('Pareto')" class="sortable">Pareto</th>
+          <th class="r sortable" onclick="sortTodos('Meta_Q')">Meta Atual (Q)</th>
+          <th class="r sortable" onclick="sortTodos('Meta_R')">Meta Atual (R$)</th>
+          <th class="r sortable" onclick="sortTodos('Real_Q')">Realizado (Q)</th>
+          <th class="r sortable" onclick="sortTodos('Real_R')">Realizado (R$)</th>
+          <th class="r sortable" onclick="sortTodos('Proj_Q')">Projeção (Q)</th>
+          <th class="r sortable" onclick="sortTodos('Estq_Tot')">Estq. Total</th>
+          <th class="r sortable" onclick="sortTodos('Estq_Min')">Estq. Mínimo</th>
+          <th class="r sortable" onclick="sortTodos('Nec_Q')">Nec. Compra</th>
+          <th onclick="sortTodos('St_Venda')" class="sortable">St. Venda</th>
+          <th onclick="sortTodos('St_Estq')" class="sortable">St. Estoque</th>
+          <th class="r sortable" onclick="sortTodos('MetaSeg_Q')">Meta Seg. (Q)</th>
+          <th class="r sortable" onclick="sortTodos('MetaSeg_R')">Meta Seg. (R$)</th>
+          <th class="r sortable" onclick="sortTodos('EstqSeg_Q')">Estq. Seg.</th>
+          <th class="r sortable" onclick="sortTodos('EstqMin_Seg')">Estq. Mínimo Seg.</th>
+          <th class="r sortable" onclick="sortTodos('NecSeg_Q')">Nec. Seg. (Q)</th>
+          <th class="r sortable" onclick="sortTodos('NecSeg_Kg')">Peso Seg. (Kg)</th>
+          <th class="r sortable" onclick="sortTodos('NecSeg_R')">Invest. Seg. (R$)</th>
+          <th onclick="sortTodos('St_EstqSeg')" class="sortable">St. Estq. Seg.</th>
+          <th onclick="sortTodos('St_VendaSeg')" class="sortable">St. Venda Seg.</th>
+        </tr></thead>
+        <tbody id="tbody-todos"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /todos -->
+</div>
 </div>
 
 <script>
@@ -552,6 +664,7 @@ function showTab(id,btn){
   document.querySelectorAll('.nb').forEach(e=>e.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
+  if(id==='todos') buildTodos();
 }
 
 /* ── CHART DEFAULTS ── */
@@ -748,7 +861,7 @@ function bC(e){
     <td class="r">${f(r['Peso Kg'],'kg')}</td>
     <td class="r">${f(r['Preço Custo ($)'],'brl')}</td>
     <td class="r">${f(r['Preço Praticado ($)'],'brl')}</td>
-    <td class="r">${f(r['Meta Mês Total (Q)'])}</td>
+    <td class="r">${f(r['Meta Mês Total (Q)'])}</td><td class="r">${f(r['Meta Mês Total (Q)']*r['Preço Praticado ($)'],'brl')}</td>
     <td class="r">${f(r['Realizado Acumulado (Q)'])}</td>
     <td class="r">${f(r['Projeção Venda (Q)'])}</td>
     <td class="r"><strong>${f(r['Receita_Real'],'brl')}</strong></td>
@@ -759,19 +872,20 @@ function bC(e){
     <td class="r">${r['Leadtime Médio (Dias)']}d</td>
   </tr>`;
 
-  const thA=`<thead><tr><th>SKU</th><th>Descrição</th><th>Marca</th><th>Categoria</th><th>Comprador</th><th class="r">Peso(Kg)</th><th class="r">Custo</th><th class="r">Prat.</th><th class="r">Meta</th><th class="r">Realizado</th><th class="r">Projeção</th><th class="r" onclick="sT('IDTBL',11)">Receita R$ ↕</th><th>Venda</th><th>Estoque</th><th class="r">Qtd Estq</th><th class="r">Nec.Compra</th><th class="r">LT(d)</th></tr></thead>`;
+  const thA=`<thead><tr><th>SKU</th><th>Descrição</th><th>Marca</th><th>Categoria</th><th>Comprador</th><th class="r">Peso(Kg)</th><th class="r">Custo</th><th class="r">Prat.</th><th class="r">Meta (Q)</th><th class="r">Meta (R$)</th><th class="r">Realizado</th><th class="r">Projeção</th><th class="r" onclick="sT('IDTBL',11)">Receita R$ ↕</th><th>Venda</th><th>Estoque</th><th class="r">Qtd Estq</th><th class="r">Nec.Compra</th><th class="r">LT(d)</th></tr></thead>`;
 
   const catRows=d.categoria.map(r=>{
     const adh=Math.round(r.real/Math.max(r.meta,1)*100);
     const cobSeg=Math.round((r.estq_seg||0)/Math.max(r.meta_seg||1,1)*100);
     return `<tr>
       <td><strong>${r['Categoria']}</strong></td>
-      <td class="r">${f(r.meta)}</td><td class="r">${f(r.real)}</td><td class="r">${f(r.proj)}</td>
+      <td class="r">${f(r.meta)}</td><td class="r"><em>${f(r.real>0?r.receita/r.real*r.meta:0,'brl')}</em></td><td class="r">${f(r.real)}</td><td class="r">${f(r.proj)}</td>
       <td class="r"><strong>${f(r.receita,'brl')}</strong></td>
       <td style="min-width:120px"><div style="display:flex;align-items:center;gap:6px">
         <div class="pb-track" style="flex:1"><div class="pb-fill ${pAcl(adh)}" style="width:${Math.min(adh,100)}%"></div></div>
         <span style="font-size:11px;color:var(--t3);min-width:32px">${adh}%</span></div></td>
       <td class="r ms" style="color:var(--purple);font-weight:700">${f(r.meta_seg||0)}</td>
+      <td class="r ms" style="color:var(--purple)">${f(r.rec_meta_seg||0,'brl')}</td>
       <td class="r ms" style="color:var(--orange);font-weight:700">${f(r.nec_seg||0)}</td>
       <td class="r ms" style="color:var(--gdark);font-weight:700">${f(r.nec_peso_seg||0,'kg')}</td>
       <td class="r ms" style="color:var(--red);font-weight:700">${f(r.nec_val_seg||0,'brl')}</td>
@@ -799,10 +913,11 @@ function bC(e){
     <td><span class="pill ${r['Pareto']==='Sim'?'pi-g':'pi-gr'}" style="font-size:10px">${r['Pareto']}</span></td>
     <td class="r">${f(r['Peso Kg'],'kg')}</td>
     <td class="r">${f(r['Preço Custo ($)'],'brl')}</td>
+    <td class="r">${f(r['Meta Mês Total (Q)'])}</td><td class="r">${f((r['Meta Mês Total (Q)']||0)*(r['Preço Praticado ($)']||0),'brl')}</td>
     <td class="r">${f(r['Projeção Venda (Q)'])}</td>
-    <td class="r ms" style="color:var(--purple);font-weight:700">${f(r['Meta Mês Seguinte (Q)'])}</td>
+    <td class="r ms" style="color:var(--purple);font-weight:700">${f(r['Meta Mês Seguinte (Q)'])}</td><td class="r ms" style="color:var(--purple)">${f((r['Meta Mês Seguinte (Q)']||0)*(r['Preço Praticado ($)']||0),'brl')}</td>
     <td class="r ms">${f(r['Estoque Mês Seguinte (Q)'])}</td>
-    <td class="r ms">${f(r['Estoque Segurança Mês Seguinte (Q)'])}</td>
+    <td class="r ms">${f(r['Estoque Mínimo Mês Seguinte (Q)'])}</td>
     <td class="r ms">${f(r['Ped. Pendente [Dig] (Q)'])}</td>
     <td class="r ms">${r['Leadtime Médio (Dias)']}d</td>
     <td class="r ms" style="color:var(--orange);font-weight:800;font-size:13px">${f(r['Necessidade Compra Mês Seguinte (Q)'])}</td>
@@ -831,7 +946,7 @@ function bC(e){
     <div class="th"><div class="thl"><span class="tht">Aderência por Categoria</span></div></div>
     <div class="to" style="margin-bottom:20px">
       <div class="ts">
-        <table><thead><tr><th>Categoria</th><th class="r">Meta</th><th class="r">Real.</th><th class="r">Proj.</th><th class="r">Receita R$</th><th>Aderência</th><th class="r ms">Meta Seg.</th><th class="r ms">Nec.Seg.</th><th class="r ms">Peso Kg</th><th class="r ms">Invest.R$</th></tr></thead>
+        <table><thead><tr><th>Categoria</th><th class="r">Meta (Q)</th><th class="r">Meta (R$)</th><th class="r">Real.</th><th class="r">Proj.</th><th class="r">Receita R$</th><th>Aderência</th><th class="r ms">Meta Seg. (Q)</th><th class="r ms">Meta Seg. (R$)</th><th class="r ms">Nec.Seg.</th><th class="r ms">Peso Kg</th><th class="r ms">Invest.R$</th></tr></thead>
         <tbody>${catRows}</tbody></table>
       </div>
     </div>
@@ -865,7 +980,7 @@ function bC(e){
     </div>
     <div class="legend-box"><span>Colunas em verde-água = dados Mês Seguinte</span></div>
     <div class="to"><div class="ts"><table id="${sId}">
-      <thead><tr><th>SKU</th><th>Descrição</th><th>Marca</th><th>Categoria</th><th>Comprador</th><th>Pareto</th><th class="r">Peso(Kg)</th><th class="r">Custo</th><th class="r">Proj.Atual</th><th class="r ms">Meta Seg.</th><th class="r ms">Estq.Seg.</th><th class="r ms">EstqSeg.</th><th class="r ms">Ped.Pend.</th><th class="r ms">LT(d)</th><th class="r ms" onclick="sT('${sId}',14)">Nec.Compra ↕</th><th class="r ms" onclick="sT('${sId}',15)">Peso Kg ↕</th><th class="r ms" onclick="sT('${sId}',16)">Invest.R$ ↕</th><th class="ms">Estq.Status</th><th class="ms">Venda Status</th></tr></thead>
+      <thead><tr><th>SKU</th><th>Descrição</th><th>Marca</th><th>Categoria</th><th>Comprador</th><th>Pareto</th><th class="r">Peso(Kg)</th><th class="r">Custo</th><th class="r">Proj.Atual</th><th class="r ms">Meta Seg.</th><th class="r ms">Estq.Mín.</th><th class="r ms">EstqMín.</th><th class="r ms">Ped.Pend.</th><th class="r ms">LT(d)</th><th class="r ms" onclick="sT('${sId}',14)">Nec.Compra ↕</th><th class="r ms" onclick="sT('${sId}',15)">Peso Kg ↕</th><th class="r ms" onclick="sT('${sId}',16)">Invest.R$ ↕</th><th class="ms">Estq.Status</th><th class="ms">Venda Status</th></tr></thead>
       <tbody>${d.top_seg.map(r=>mkRS(r)).join('')}</tbody></table></div>
       <div class="tf"><span id="fts-${e}">Exibindo ${d.top_seg.length} SKUs</span><span>Invest. total: ${f(d.nec_val,'brl')} · Peso: ${f(d.peso_seg,'kg')}</span></div></div>
   `;
@@ -931,8 +1046,8 @@ function buildMesSeg(){
   Object.values(D).forEach(d=>{
     (d.categoria||[]).forEach(r=>{
       const c=r['Categoria'];
-      if(!catMap[c]) catMap[c]={meta:0,proj:0,receita:0,meta_seg:0,estq_seg:0,nec_seg:0,peso_seg:0,nec_val:0,rec_meta_seg:0};
-      catMap[c].meta+=r.meta||0; catMap[c].proj+=r.proj||0; catMap[c].receita+=r.receita||0;
+      if(!catMap[c]) catMap[c]={meta:0,proj:0,receita:0,real:0,meta_rec:0,meta_seg:0,estq_seg:0,nec_seg:0,peso_seg:0,nec_val:0,rec_meta_seg:0};
+      catMap[c].meta+=r.meta||0; catMap[c].proj+=r.proj||0; catMap[c].receita+=r.receita||0; catMap[c].real+=r.real||0;
       catMap[c].meta_seg+=r.meta_seg||0; catMap[c].estq_seg+=r.estq_seg||0;
       catMap[c].nec_seg+=r.nec_seg||0; catMap[c].peso_seg+=r.nec_peso_seg||0;
       catMap[c].nec_val+=r.nec_val_seg||0; catMap[c].rec_meta_seg+=r.rec_meta_seg||0;
@@ -942,8 +1057,9 @@ function buildMesSeg(){
     const vp=((r.meta_seg/Math.max(r.meta,1)-1)*100).toFixed(1);
     return `<tr>
       <td><strong>${cat}</strong></td>
-      <td class="r">${f(r.meta)}</td><td class="r">${f(r.proj)}</td><td class="r"><strong>${f(r.receita,'brl')}</strong></td>
+      <td class="r">${f(r.meta)}</td><td class="r"><strong>${f(r.real>0?r.receita/r.real*r.meta:r.rec_meta_seg>0?r.rec_meta_seg/Math.max(r.meta_seg,1)*r.meta:0,'brl')}</strong></td><td class="r">${f(r.proj)}</td><td class="r"><strong>${f(r.receita,'brl')}</strong></td>
       <td class="r ms" style="color:var(--purple);font-weight:700">${f(r.meta_seg)}</td>
+      <td class="r ms" style="color:var(--purple)">${f(r.rec_meta_seg,'brl')}</td>
       <td class="r ms">${f(r.estq_seg)}</td>
       <td class="r ms" style="color:var(--orange);font-weight:700">${f(r.nec_seg)}</td>
       <td class="r ms" style="color:var(--gdark);font-weight:700">${f(r.peso_seg,'kg')}</td>
@@ -968,10 +1084,12 @@ function buildMesSeg(){
         <td><span class="pill ${r['Pareto']==='Sim'?'pi-g':'pi-gr'}" style="font-size:10px">${r['Pareto']}</span></td>
         <td class="r">${f(r['Peso Kg'],'kg')}</td>
         <td class="r">${f(r['Preço Custo ($)'],'brl')}</td>
+        <td class="r">${f(r['Meta Mês Total (Q)'])}</td>
+        <td class="r">${f(r['Meta Mês Total (Q)']*r['Preço Praticado ($)'],'brl')}</td>
         <td class="r">${f(r['Projeção Venda (Q)'])}</td>
         <td class="r ms" style="color:var(--purple);font-weight:700">${f(r['Meta Mês Seguinte (Q)'])}</td>
         <td class="r ms">${f(r['Estoque Mês Seguinte (Q)'])}</td>
-        <td class="r ms">${f(r['Estoque Segurança Mês Seguinte (Q)'])}</td>
+        <td class="r ms">${f(r['Estoque Mínimo Mês Seguinte (Q)'])}</td>
         <td class="r ms">${f(r['Ped. Pendente [Dig] (Q)'])}</td>
         <td class="r ms">${r['Leadtime Médio (Dias)']}d</td>
         <td class="r ms" style="color:var(--orange);font-weight:800;font-size:13px">${f(r['Necessidade Compra Mês Seguinte (Q)'])}</td>
@@ -1123,6 +1241,7 @@ async function refreshData(){
     buildSemAtual();buildSemSeg('sem-seg');
     buildKpisAtual();buildKpisSeg();
     buildCharts();buildAlertas();buildMesSeg();
+    buildTodos();
     if(src)src.textContent='Atualizado: '+new Date().toLocaleString('pt-BR');
   }catch(e){
     if(src)src.textContent='Erro: '+e.message;
@@ -1145,6 +1264,143 @@ async function initDashboard(){
   buildSemAtual();buildSemSeg('sem-seg');
   buildKpisAtual();buildKpisSeg();
   buildCharts();buildAlertas();buildMesSeg();
+}
+
+
+/* ════ TODOS OS PRODUTOS ════ */
+let _todosData = [];
+let _todosFiltered = [];
+let _todosSortCol = 'Real_R';
+let _todosSortDir = -1;
+
+function buildTodos(){
+  if(!D._all_skus || !D._all_skus.length) return;
+  _todosData = D._all_skus;
+
+  // Popular selects de categoria e comprador
+  const cats  = [...new Set(_todosData.map(r=>r.Categoria).filter(Boolean))].sort();
+  const comps = [...new Set(_todosData.map(r=>r.Comprador).filter(Boolean))].sort();
+
+  const fCat  = document.getElementById('f-cat');
+  const fComp = document.getElementById('f-comp');
+  if(fCat){
+    fCat.innerHTML = '<option value="">Todas categorias</option>' +
+      cats.map(c=>`<option>${c}</option>`).join('');
+  }
+  if(fComp){
+    fComp.innerHTML = '<option value="">Todos compradores</option>' +
+      comps.map(c=>`<option>${c}</option>`).join('');
+  }
+
+  filterTodos();
+}
+
+function filterTodos(){
+  const search = (document.getElementById('f-search')||{}).value||'';
+  const canal  = (document.getElementById('f-canal')||{}).value||'';
+  const cat    = (document.getElementById('f-cat')||{}).value||'';
+  const comp   = (document.getElementById('f-comp')||{}).value||'';
+  const stv    = (document.getElementById('f-stv')||{}).value||'';
+  const ste    = (document.getElementById('f-ste')||{}).value||'';
+  const pareto = (document.getElementById('f-pareto')||{}).value||'';
+  const q = search.toLowerCase();
+
+  _todosFiltered = _todosData.filter(r=>{
+    if(canal  && r.Canal     !== canal)  return false;
+    if(cat    && r.Categoria !== cat)    return false;
+    if(comp   && r.Comprador !== comp)   return false;
+    if(stv    && r.St_Venda  !== stv)    return false;
+    if(ste    && r.St_Estq   !== ste)    return false;
+    if(pareto && r.Pareto    !== pareto) return false;
+    if(q && !((r.Produto||'').toLowerCase().includes(q) ||
+              (r.Descrição||'').toLowerCase().includes(q) ||
+              (r.Marca||'').toLowerCase().includes(q) ||
+              (r.Categoria||'').toLowerCase().includes(q))) return false;
+    return true;
+  });
+
+  sortAndRenderTodos();
+}
+
+function clearFilterTodos(){
+  ['f-search','f-canal','f-cat','f-comp','f-stv','f-ste','f-pareto'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value='';
+  });
+  filterTodos();
+}
+
+function sortTodos(col){
+  if(_todosSortCol === col) _todosSortDir *= -1;
+  else { _todosSortCol = col; _todosSortDir = -1; }
+  // Atualizar header visual
+  document.querySelectorAll('#tbl-todos th').forEach(th=>{
+    th.classList.remove('sort-asc','sort-desc');
+    if(th.textContent.trim().replace(/ [▲▼]/,'').trim() ===
+       col.replace(/_/g,' ').trim()) {
+      th.classList.add(_todosSortDir===1?'sort-asc':'sort-desc');
+    }
+  });
+  sortAndRenderTodos();
+}
+
+function sortAndRenderTodos(){
+  const col = _todosSortCol;
+  const dir = _todosSortDir;
+  const sorted = [..._todosFiltered].sort((a,b)=>{
+    const av = a[col], bv = b[col];
+    if(typeof av === 'number') return (av-bv)*dir;
+    return String(av||'').localeCompare(String(bv||''))*dir;
+  });
+
+  const brl = v => 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const num = v => Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:1});
+
+  function badge(v){
+    const map = {
+      'Acima Meta':'ok','Abaixo Meta':'warn','Sem Meta':'neu',
+      'Estoque Sobra':'ok','Estoque Falta':'warn','Estoque Zerado':'err'
+    };
+    return `<span class="badge badge-${map[v]||'neu'}">${v}</span>`;
+  }
+
+  const rows = sorted.map(r=>`<tr>
+    <td>${r.Canal}</td>
+    <td>${r.Produto}</td>
+    <td style="max-width:280px;white-space:normal;font-size:11px">${r.Descrição}</td>
+    <td>${r.Marca}</td>
+    <td>${r.Categoria}</td>
+    <td>${r.Comprador}</td>
+    <td>${r.Pareto}</td>
+    <td class="r">${num(r.Meta_Q)}</td>
+    <td class="r">${brl(r.Meta_R)}</td>
+    <td class="r">${num(r.Real_Q)}</td>
+    <td class="r">${brl(r.Real_R)}</td>
+    <td class="r">${num(r.Proj_Q)}</td>
+    <td class="r">${num(r.Estq_Tot)}</td>
+    <td class="r">${num(r.Estq_Min)}</td>
+    <td class="r" style="font-weight:${r.Nec_Q>0?'700':'400'};color:${r.Nec_Q>0?'var(--orange)':'inherit'}">${num(r.Nec_Q)}</td>
+    <td>${badge(r.St_Venda)}</td>
+    <td>${badge(r.St_Estq)}</td>
+    <td class="r">${num(r.MetaSeg_Q)}</td>
+    <td class="r">${brl(r.MetaSeg_R)}</td>
+    <td class="r">${num(r.EstqSeg_Q)}</td>
+    <td class="r">${num(r.EstqMin_Seg)}</td>
+    <td class="r" style="font-weight:${r.NecSeg_Q>0?'700':'400'};color:${r.NecSeg_Q>0?'var(--orange)':'inherit'}">${num(r.NecSeg_Q)}</td>
+    <td class="r">${num(r.NecSeg_Kg)}</td>
+    <td class="r" style="font-weight:${r.NecSeg_R>0?'700':'400'};color:${r.NecSeg_R>0?'var(--purple)':'inherit'}">${brl(r.NecSeg_R)}</td>
+    <td>${badge(r.St_EstqSeg)}</td>
+    <td>${badge(r.St_VendaSeg)}</td>
+  </tr>`).join('');
+
+  const tbody = document.getElementById('tbody-todos');
+  if(tbody) tbody.innerHTML = rows || '<tr><td colspan="26" style="text-align:center;color:var(--t2);padding:24px">Nenhum produto encontrado</td></tr>';
+
+  const countEl = document.getElementById('f-count');
+  if(countEl) countEl.textContent = sorted.length.toLocaleString('pt-BR') + ' produtos';
+
+  const subEl = document.getElementById('todos-sub');
+  if(subEl) subEl.textContent = `${sorted.length.toLocaleString('pt-BR')} de ${_todosData.length.toLocaleString('pt-BR')} SKUs · Todos os canais`;
 }
 
 initDashboard();
