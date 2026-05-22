@@ -25,7 +25,7 @@ jobs:
         run: |
           XLSX=$(find planilha -name "*.xlsx" | head -1)
           echo "Processando: $XLSX"
-          python atualizar.py "$XLSX"
+          python update.py "$XLSX"
 
       - name: Publicar data.json
         run: |
