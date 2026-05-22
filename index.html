@@ -223,6 +223,90 @@ tbody tr:hover td.ms{background:rgba(14,158,142,.10);}
   font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s;}
 .btn-refresh:hover{opacity:.85;}.btn-refresh:disabled{opacity:.5;cursor:not-allowed;}
 #data-source{font-size:10px;color:rgba(255,255,255,.6);white-space:nowrap;}
+
+/* ══════════════════════════════════════════
+   MOBILE — Popular Pet S&OP
+══════════════════════════════════════════ */
+
+@media(max-width:900px){
+  .sem-grid,.cg3,.cg4,.cg5,.cg6{grid-template-columns:repeat(2,1fr);}
+  .ch2{grid-template-columns:1fr;} .ch2 .sp2{grid-column:span 1;}
+  .ch3{grid-template-columns:1fr 1fr;}
+}
+
+@media(max-width:600px){
+  /* Topbar */
+  .topbar{padding:0 12px;height:52px;}
+  .tl img{height:30px;}
+  .ttitle,.tsubt,.tdiv{display:none;}
+  .chip{display:none;}
+  #data-source{display:none;}
+  .btn-refresh{
+    position:fixed;bottom:16px;right:16px;z-index:9999;
+    border-radius:50px;padding:12px 18px;font-size:13px;
+    box-shadow:0 4px 20px rgba(0,0,0,.25);
+  }
+
+  /* Ann bar */
+  .ann{font-size:10px;padding:5px 10px;}
+  .ann span{display:none;}
+
+  /* Nav — scroll horizontal com snap */
+  .nav{padding:0 6px;gap:0;top:52px;overflow-x:auto;scroll-snap-type:x mandatory;}
+  .nb{padding:10px 12px;font-size:11px;white-space:nowrap;scroll-snap-align:start;}
+
+  /* Main */
+  .main{padding:10px;}
+
+  /* Todos os grids — coluna única */
+  .sem-grid,.cg2,.cg3,.cg4,.cg5,.cg6,
+  .ch2,.ch3,.ch4{grid-template-columns:1fr !important;}
+  .ch2 .sp2,.sp2,.sp3{grid-column:span 1 !important;}
+
+  /* Semáforo cards */
+  .sem-card{padding:12px 14px;}
+  .sem-val{font-size:22px;}
+  .sem-label{font-size:11px;}
+
+  /* KPI */
+  .kpi-card{padding:12px 14px;}
+
+  /* Seção */
+  .sh{margin-bottom:12px;}
+  .sec-title{font-size:14px;}
+
+  /* Banner mês seguinte — empilha */
+  .ms-banner{flex-direction:column;padding:16px;gap:12px;}
+  .msb-title{font-size:15px;}
+  .msb-kpis{gap:16px;justify-content:flex-start;}
+  .msk-v{font-size:16px;}
+
+  /* Comp cards */
+  #comp-ms{grid-template-columns:1fr !important;}
+  .comp-card{padding:12px 14px;}
+  .comp-name{font-size:13px;}
+
+  /* Tabelas — scroll horizontal */
+  .ts{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{font-size:11px;}
+  th,td{padding:6px 8px;white-space:nowrap;}
+
+  /* Charts */
+  canvas{max-height:180px;}
+
+  /* Alertas */
+  .alert-rows{font-size:12px;}
+}
+
+@media(max-width:400px){
+  .sem-val{font-size:18px;}
+  .nb{font-size:10px;padding:8px 10px;}
+  table{font-size:10px;}
+  th,td{padding:5px 6px;}
+  .ms-banner{padding:12px;}
+  .msk-v{font-size:14px;}
+}
+
 </style>
 </head>
 <body>
