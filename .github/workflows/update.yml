@@ -2,8 +2,8 @@ name: Atualiza Dashboard S&OP
 
 on:
   push:
-    paths:
-      - 'planilha/**'
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -20,6 +20,9 @@ jobs:
 
       - name: Instalar dependências
         run: pip install pandas openpyxl numpy
+
+      - name: Verificar Excel
+        run: find . -name "*.xlsx" | head -5
 
       - name: Gerar data.json
         run: |
