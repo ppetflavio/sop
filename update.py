@@ -119,6 +119,33 @@ def build(xlsx_path):
             'criticos':criticos,'compradores':comps}
     return result
 
+
+def build_all_skus(df):
+    emp_names = {1:'Marketplace', 995:'Shopee Full', 996:'Amazon Full', 997:'Meli Full'}
+    result = []
+    for _, row in df.iterrows():
+        emp = int(row['Empresa']) if str(row['Empresa']).isdigit() else 0
+        if emp not in emp_names: continue
+        result.append({
+            'Canal':emp_names[emp],'Produto':str(row['Produto']),'Descrição':str(row['Descrição']),
+            'Marca':str(row['Marca']),'Categoria':str(row['Categoria']),'Comprador':str(row['Comprador']),
+            'Pareto':str(row['Pareto']),'Peso Kg':float(row['Peso Kg']),
+            'Custo':float(row['Preço Custo ($)']),'Praticado':float(row['Preço Praticado ($)']),
+            'Meta_Q':float(row['Meta Mês Total (Q)']),'Meta_R':float(row['Meta Mês Total (Q)']*row['Preço Praticado ($)']),
+            'Real_Q':float(row['Realizado Acumulado (Q)']),'Real_R':float(row['Realizado Acumulado (Q)']*row['Preço Praticado ($)']),
+            'Proj_Q':float(row['Projeção Venda (Q)']),'Estq_Tot':float(row['Estoque Total (Q)']),
+            'Estq_Min':float(row['Estoque Segurança (Q)']),'Nec_Q':float(row['Necessidade Compra (Q)']),
+            'Ped_Pend':float(row['Ped. Pendente [Dig] (Q)']),'LT':float(row['Leadtime Médio (Dias)']),
+            'St_Venda':str(row['Status Venda']),'St_Estq':str(row['Status Estoque']),
+            'MetaSeg_Q':float(row['Meta Mês Seguinte (Q)']),'MetaSeg_R':float(row['Meta Mês Seguinte (Q)']*row['Preço Praticado ($)']),
+            'EstqSeg_Q':float(row['Estoque Mês Seguinte (Q)']),'EstqMin_Seg':float(row['Estoque Segurança Mês Seguinte (Q)']),
+            'NecSeg_Q':float(row['Necessidade Compra Mês Seguinte (Q)']),
+            'NecSeg_Kg':float(row['Peso Total Kg (Necessidde compra Mês seguinte)']),
+            'NecSeg_R':float(row['Necessidade Compra Mês Seguinte (Q)']*row['Preço Custo ($)']),
+            'St_EstqSeg':ms_ste(row),'St_VendaSeg':ms_stv(row),
+        })
+    return result
+
 if __name__ == '__main__':
     # Detecta o Excel automaticamente
     if len(sys.argv) > 1:
@@ -141,10 +168,20 @@ if __name__ == '__main__':
     for emp, data in D.items():
         print(f"  {data['nome']}: nec={data['nec_seg']:.0f} | comps={[c['Comprador'] for c in data['compradores'] if c['nec_seg']>0]}")
 
+    # Gerar data.json (agregados por canal)
     out = Path('data.json')
     out.write_text(json.dumps(D, cls=NpEnc, ensure_ascii=False, separators=(',',':')), encoding='utf-8')
-    print(f"\ndata.json atualizado: {out.stat().st_size//1024} KB")
+    print(f"data.json: {out.stat().st_size//1024} KB")
+
+    # Gerar products.json (todos os SKUs para tabela geral)
+    df2 = pd.read_excel(xlsx)
+    df2['Comprador'] = df2['Comprador'].str.strip()
+    all_skus = build_all_skus(df2)
+    out2 = Path('products.json')
+    out2.write_text(json.dumps(all_skus, cls=NpEnc, ensure_ascii=False, separators=(',',':')), encoding='utf-8')
+    print(f"products.json: {out2.stat().st_size//1024} KB ({len(all_skus)} SKUs)")
+
     print("\nPróximo passo — publicar no GitHub:")
-    print("  git add data.json planilha/")
+    print("  git add data.json products.json planilha/")
     print("  git commit -m 'S&OP atualizado'")
     print("  git push")
