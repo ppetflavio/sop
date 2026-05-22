@@ -1269,7 +1269,44 @@ let _todosSortCol = 'Real_R';
 let _todosSortDir = -1;
 
 function buildTodos(){
-  if(!D._all_skus || !D._all_skus.length) return;
+  // Se _all_skus não carregou, construir a partir do D existente
+  if(!D._all_skus || !D._all_skus.length){
+    const EN={1:'Marketplace',995:'Shopee Full',996:'Amazon Full',997:'Meli Full'};
+    const brl=v=>+v||0;
+    const built=[];
+    Object.keys(D).forEach(empKey=>{
+      const d=D[empKey];
+      if(!d||!d.top100) return;
+      // Combinar top100 e top_seg por produto
+      const segMap={};
+      (d.top_seg||[]).forEach(r=>{segMap[r['Produto']]=r;});
+      (d.top100||[]).forEach(r=>{
+        const s=segMap[r['Produto']]||{};
+        built.push({
+          Canal:d.nome,Produto:r['Produto'],Descrição:r['Descrição'],
+          Marca:r['Marca'],Categoria:r['Categoria'],Comprador:r['Comprador'],Pareto:r['Pareto'],
+          'Peso Kg':brl(r['Peso Kg']),Custo:brl(r['Preço Custo ($)']),Praticado:brl(r['Preço Praticado ($)']),
+          Meta_Q:brl(r['Meta Mês Total (Q)']),Meta_R:brl(r['Meta Mês Total (Q)'])*brl(r['Preço Praticado ($)']),
+          Real_Q:brl(r['Realizado Acumulado (Q)']),Real_R:brl(r['Receita_Real']),
+          Proj_Q:brl(r['Projeção Venda (Q)']),
+          Estq_Tot:brl(r['Estoque Total (Q)']),Estq_Min:0,
+          Nec_Q:brl(r['Necessidade Compra (Q)']),Ped_Pend:0,LT:brl(r['Leadtime Médio (Dias)']),
+          St_Venda:r['Status Venda'],St_Estq:r['Status Estoque'],
+          MetaSeg_Q:brl(s['Meta Mês Seguinte (Q)']),
+          MetaSeg_R:brl(s['Meta Mês Seguinte (Q)'])*brl(r['Preço Praticado ($)']),
+          EstqSeg_Q:brl(s['Estoque Mês Seguinte (Q)']),EstqMin_Seg:brl(s['Estoque Mínimo Mês Seguinte (Q)']),
+          NecSeg_Q:brl(s['Necessidade Compra Mês Seguinte (Q)']),
+          NecSeg_Kg:brl(s['Nec_Peso_Seg']),NecSeg_R:brl(s['Nec_Valor_Seg']),
+          St_EstqSeg:s['Status_Estq_Seg']||'—',St_VendaSeg:s['Status_Venda_Seg']||'—',
+        });
+      });
+    });
+    if(built.length) D._all_skus=built;
+    else{
+      document.getElementById('tbody-todos').innerHTML='<tr><td colspan="26" style="text-align:center;padding:24px;color:var(--t2)">⚠ Aguardando dados... clique em Atualizar.</td></tr>';
+      return;
+    }
+  }
   _todosData = D._all_skus;
 
   // Popular selects de categoria e comprador
