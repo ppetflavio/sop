@@ -3,60 +3,74 @@
 ## Estrutura do repositório
 
 ```
-/
-├── index.html    ← Dashboard (não editar)
-├── data.json     ← Dados processados (atualizar semanalmente)
-├── update.py     ← Script de atualização
-└── README.md
+sopp-dashboard/
+├── index.html                        ← Dashboard (não editar)
+├── data.json                         ← Dados (gerado automaticamente)
+├── update.py                         ← Script de geração
+├── planilha/
+│   └── BaseHtmlv1.xlsx               ← Substituir aqui toda semana
+└── .github/
+    └── workflows/
+        └── update.yml                ← Automação (GitHub Actions)
 ```
-
-## Como publicar no GitHub Pages
-
-### 1ª vez (configuração)
-1. Crie um repositório no GitHub (ex: `sopp-dashboard`)
-2. Faça upload dos 3 arquivos: `index.html`, `data.json`, `update.py`
-3. Vá em **Settings → Pages → Source: main branch → / (root)**
-4. Acesse: `https://SEU_USUARIO.github.io/sopp-dashboard`
 
 ---
 
-## Como atualizar os dados
+## Como atualizar o dashboard (toda semana)
 
-### Requisitos
+### Opção A — Pelo GitHub (sem instalar nada)
+
+1. Acesse o repositório no GitHub
+2. Clique na pasta `planilha/`
+3. Clique em **Add file → Upload files**
+4. Arraste o novo Excel (substitui o anterior)
+5. Clique em **Commit changes**
+6. O GitHub Actions roda automaticamente e atualiza o `data.json`
+7. Em ~60 segundos o dashboard está atualizado
+
+### Opção B — Pelo terminal
+
 ```bash
-pip install pandas openpyxl numpy
-```
+# Substituir o Excel
+cp novo_relatorio.xlsx planilha/BaseHtmlv1.xlsx
 
-### Passo a passo (toda semana)
-```bash
-# 1. Baixe a planilha do Google Sheets como .xlsx
-# 2. Rode o script
-python update.py BaseHtmlv1.xlsx
-
-# 3. Publique no GitHub
-git add data.json
-git commit -m "S&OP semana $(date +%V/%Y)"
+# Publicar
+git add planilha/
+git commit -m "S&OP semana 22"
 git push
 ```
+O GitHub Actions cuida do resto automaticamente.
 
-O dashboard atualiza automaticamente em ~30 segundos após o push.
+---
+
+## Configuração inicial (1x só)
+
+### 1. Criar repositório no GitHub
+1. Vá em github.com → **New repository**
+2. Nome: `sopp-dashboard`
+3. Visibilidade: **Public** (necessário para GitHub Pages gratuito)
+4. Clique em **Create repository**
+
+### 2. Fazer upload dos arquivos
+Upload de todos os arquivos desta pasta mantendo a estrutura.
+
+### 3. Ativar GitHub Pages
+1. **Settings → Pages**
+2. Source: **Deploy from a branch**
+3. Branch: **main** | Folder: **/ (root)**
+4. **Save**
+
+### 4. Ativar GitHub Actions
+1. **Settings → Actions → General**
+2. **Allow all actions** → **Save**
+
+### 5. Acessar o dashboard
+```
+https://SEU_USUARIO.github.io/sopp-dashboard
+```
 
 ---
 
 ## Como funciona o botão Atualizar
 
-- Clica em **Atualizar** → busca `data.json` do GitHub Pages
-- Sem CORS, sem proxy, sem erros
-- Todas as seções são atualizadas: semáforos, KPIs, charts, tabelas, mês seguinte, compradores
-
-## Estrutura do data.json
-
-O `data.json` contém os dados agregados por canal (Marketplace, Shopee, Amazon, Meli) com:
-- KPIs mês atual e mês seguinte
-- Top 100 SKUs por receita
-- SKUs com necessidade de compra
-- Compradores consolidados
-- Críticos (zerado + acima da meta)
-- Distribuição por categoria
-
-**Gerado automaticamente pelo `update.py` a partir do Excel exportado do Google Sheets.**
+Ao clicar **Atualizar**, o dashboard busca o `data.json` mais recente do próprio GitHub Pages — mesmo domínio, sem CORS, sem erros.
