@@ -549,30 +549,11 @@ th.sort-desc::after{content:' ▼';font-size:10px;color:var(--purple);}
   </div>
 </div>
 
-</div><!-- /main -->
 
-<!-- MODAL -->
-<div class="mo" id="modal" onclick="cMb(event)">
-  <div class="md">
-    <div class="mh">
-      <h2 id="mtitle">—</h2>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-g" id="mxbtn">⬇ Excel</button>
-        <button class="mx" onclick="cM()">×</button>
-      </div>
-    </div>
-    <div class="mb" id="mbody"></div>
-  
 <!-- ══════════════ TODOS OS PRODUTOS ══════════════ -->
 <div class="tp" id="tab-todos">
 
-  <div class="sh">
-    <div class="sbar p"></div>
-    <div class="stxt">
-      <span class="sec-title">📋 Todos os Produtos</span>
-      <span class="sec-sub" id="todos-sub">Todos os SKUs · Todos os canais</span>
-    </div>
-  </div>
+  <div class="sh"><div class="sbar p"></div><div class="stitle">📋 Todos os Produtos</div><span class="ssub" id="todos-sub">Todos os SKUs · Todos os canais</span></div>
 
   <div class="filter-bar">
     <input class="f-input" type="text" id="f-search" placeholder="🔍 Produto, descrição, marca..." oninput="filterTodos()">
@@ -626,7 +607,21 @@ th.sort-desc::after{content:' ▼';font-size:10px;color:var(--purple);}
   </div>
 
 </div><!-- /todos -->
-</div>
+</div><!-- /main -->
+
+<!-- MODAL -->
+
+<div class="mo" id="modal" onclick="cMb(event)">
+  <div class="md">
+    <div class="mh">
+      <h2 id="mtitle">—</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-g" id="mxbtn">⬇ Excel</button>
+        <button class="mx" onclick="cM()">×</button>
+      </div>
+    </div>
+    <div class="mb" id="mbody"></div>
+  </div>
 </div>
 
 <script>
