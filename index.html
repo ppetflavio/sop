@@ -128,16 +128,16 @@ canvas{max-height:240px!important;}
 
 .to{border:1px solid var(--border);border-radius:var(--r);background:var(--white);box-shadow:var(--sh);margin-bottom:22px;overflow:hidden;}
 .ts{overflow-x:auto;max-height:480px;overflow-y:auto;}
-table{width:100%;border-collapse:collapse;font-size:13px;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
 thead{position:sticky;top:0;z-index:10;}
-thead th{background:var(--purple);color:#fff;padding:10px 13px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;cursor:pointer;user-select:none;border-right:1px solid rgba(255,255,255,.12);}
+thead th{background:var(--purple);color:#fff;padding:7px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;cursor:pointer;user-select:none;border-right:1px solid rgba(255,255,255,.12);}
 thead th:last-child{border-right:none;}
 thead th:hover{background:var(--pdark);}
 thead th.r{text-align:right;}
 /* Mês seguinte column headers - teal background */
 thead th.ms{background:#0E7A6E;color:#fff;}
 thead th.ms:hover{background:#0A5E55;}
-td{padding:9px 13px;border-bottom:1px solid var(--bg2);white-space:nowrap;color:var(--t2);}
+td{padding:6px 10px;border-bottom:1px solid #F0F2F5;border-right:1px solid #F0F2F5;white-space:nowrap;color:var(--t2);font-size:11px;}
 td.r{text-align:right;}
 td strong{color:var(--text);font-weight:700;}
 /* Mês seguinte td subtle teal tint */
@@ -348,6 +348,7 @@ th.sort-desc::after{content:' ▼';font-size:10px;color:var(--purple);}
 }
 
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 </head>
 <body>
 
@@ -625,6 +626,7 @@ th.sort-desc::after{content:' ▼';font-size:10px;color:var(--purple);}
 </div>
 
 <script>
+Chart.register(ChartDataLabels);
 const D={};
 const NM={'1':'Marketplace','995':'Shopee Full','996':'Amazon Full','997':'Meli Full'};
 const CL={'1':'#8DC63F','995':'#E07B1A','996':'#1E6FBB','997':'#6B3FA0'};
@@ -667,15 +669,28 @@ function showTab(id,btn){
 
 /* ── CHART DEFAULTS ── */
 Chart.defaults.font.family='Nunito';
-const cOpts=(yFmt,stacked)=>({responsive:true,
-  plugins:{legend:{labels:{color:'#555',font:{size:11},boxWidth:12}}},
+const cOpts=(yFmt,stacked)=>({responsive:true,maintainAspectRatio:true,
+  plugins:{
+    legend:{labels:{color:'#555',font:{size:11},boxWidth:12}},
+    datalabels:{
+      color:'#000',font:{size:9,weight:'700'},
+      anchor:'end',align:'end',offset:1,
+      clamp:true,
+      formatter:(v)=>{
+        if(!v||v===0) return '';
+        return v>=1e6?Math.round(v/1e6)+'M':v>=1000?Math.round(v/1000)+'k':Math.round(v);
+      },
+      display:(ctx)=>{ const v=ctx.dataset.data[ctx.dataIndex]; return v&&v>0; }
+    }
+  },
   scales:{
     x:{stacked:!!stacked,ticks:{color:'#888',font:{size:11}},grid:{color:'rgba(0,0,0,.04)'}},
     y:{stacked:!!stacked,ticks:{color:'#888',font:{size:11},
         callback:v=>yFmt==='brl'?(v>=1e6?'R$'+Math.round(v/1e6)+'M':v>=1000?'R$'+Math.round(v/1000)+'k':'R$'+v):
                     yFmt==='pct'?v+'%':v>=1000?Math.round(v/1000)+'k':v},
-        grid:{color:'rgba(0,0,0,.05)'}}
-  }});
+        grid:{color:'rgba(0,0,0,.05)'}
+  }
+}});
 
 /* ════════════════════════════════════
    SEMÁFORO MÊS ATUAL
@@ -725,6 +740,7 @@ function buildSemSeg(targetId){
         <div><div class="sk-lbl">Estoque Proj.</div><div class="sk-val">${f(d.estq_seg)+'un'}</div></div>
         <div><div class="sk-lbl">Cobertura</div><div class="sk-val ${ac}">${f(cob,'pct')}</div></div>
         <div><div class="sk-lbl">Nec. Compra</div><div class="sk-val o">${f(d.nec_seg)+' un'}</div></div>
+        <div><div class="sk-lbl">Ped. Pendente</div><div class="sk-val t">${f(d.ped_pend||0)+' un'}</div></div>
       </div>
       <div class="pb-wrap">
         <div class="pb-lbl"><span>Cobertura estoque / meta</span><span>${f(cob,'pct')}</span></div>
@@ -766,11 +782,12 @@ function buildKpisAtual(){
    KPIs CONSOLIDADOS MÊS SEGUINTE
 ════════════════════════════════════ */
 function buildKpisSeg(){
-  let tMS=0,tNS=0,tPS=0,tVS=0,tSK=0;
-  Object.values(D).forEach(d=>{tMS+=d.rec_meta_seg;tNS+=d.nec_seg;tPS+=d.peso_seg;tVS+=d.nec_val;tSK+=d.skus_nec_seg;});
+  let tMS=0,tNS=0,tPS=0,tVS=0,tSK=0,tPP=0;
+  Object.values(D).forEach(d=>{tMS+=d.rec_meta_seg;tNS+=d.nec_seg;tPS+=d.peso_seg;tVS+=d.nec_val;tSK+=d.skus_nec_seg;tPP+=(d.ped_pend||0);});
   document.getElementById('kpis-seg').innerHTML=[
     {l:'Meta Receita Mês Seg.',v:f(tMS,'brl'),vc:'p',a:'p',sub:'Receita projetada'},
     {l:'Necessidade Compra',v:f(tNS)+' un',vc:'o',a:'o',sub:tSK+' SKUs com necessidade'},
+    {l:'Ped. Pendente [Dig]',v:f(tPP)+' un',vc:'t',a:'t',sub:'Pedidos aguardando entrada'},
     {l:'Peso Total (Kg)',v:f(tPS,'kg'),vc:'t',a:'t',sub:'Volume físico a comprar'},
     {l:'Investimento (Custo)',v:f(tVS,'brl'),vc:'r',a:'r',sub:'R$ necessário p/ compras'},
     {l:'Canais Deficientes',v:Object.values(D).filter(d=>d.cobertura_seg<50).length+' canais',vc:'r',a:'r',sub:'Cobertura < 50%'},
@@ -805,7 +822,7 @@ function buildCharts(){
     safeChart('ch-dv-'+e,{type:'doughnut',data:{
       labels:['Acima Meta','Abaixo Meta'],
       datasets:[{data:[sv['Acima Meta']||0,sv['Abaixo Meta']||0],backgroundColor:['#8DC63F','#E07B1A'],borderWidth:0,hoverOffset:4}]
-    },options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:11},boxWidth:12}}}}});
+    },options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:11},boxWidth:12}},datalabels:{color:'#000',font:{size:9,weight:'700'},formatter:(v,ctx)=>{if(!v||v===0)return'';const tot=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);return tot>0?Math.round(v/tot*100)+'%':'';}}}}}});
   });
   safeChart('ch-meta-comp',{type:'bar',data:{labels:lbls,datasets:[
     {label:'Meta Mês Atual',data:emps.map(e=>D[e].meta_qtd),backgroundColor:'#BDE07A',borderRadius:4},
@@ -840,6 +857,7 @@ function bC(e){
     {l:'Meta Mês Seguinte',v:f(d.meta_seg)+' un',vc:'p',a:'p',sub:f(d.rec_meta_seg,'brl')},
     {l:'Estoque Projetado',v:f(d.estq_seg)+' un',vc:d.cobertura_seg>=80?'g':'o',a:d.cobertura_seg>=80?'g':'o',sub:'Cobertura: '+f(d.cobertura_seg,'pct')},
     {l:'Nec. Compra',v:f(d.nec_seg)+' un',vc:'o',a:'o',sub:d.skus_nec_seg+' SKUs'},
+    {l:'Ped. Pendente',v:f(d.ped_pend||0)+' un',vc:'t',a:'t',sub:'Pedidos digitados'},
     {l:'Peso Total (Kg)',v:f(d.peso_seg,'kg'),vc:'t',a:'t',sub:'Volume físico'},
     {l:'Investimento',v:f(d.nec_val,'brl'),vc:'r',a:'r',sub:'R$ custo necessário'},
   ];
@@ -992,7 +1010,7 @@ function bC(e){
     const se=d.status_estoque;
     safeChart(`cc-estq-${e}`,{type:'doughnut',data:{
       labels:Object.keys(se),datasets:[{data:Object.values(se),backgroundColor:['#D63B3B','#E07B1A','#8DC63F'],borderWidth:0,hoverOffset:4}]
-    },options:{responsive:true,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:11},boxWidth:12}}}}});
+    },options:{responsive:true,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:11},boxWidth:12}},datalabels:{color:'#000',font:{size:9,weight:'700'},formatter:(v,ctx)=>{if(!v||v===0)return'';const tot=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);return tot>0?Math.round(v/tot*100)+'%':'';}}}}}});
   },60);
 }
 
@@ -1006,6 +1024,7 @@ function buildMesSeg(){
   document.getElementById('msb-kpis').innerHTML=[
     {l:'Meta Receita Seg.',v:f(tMS,'brl'),g:true},
     {l:'Nec. Compra Total',v:f(tNS)+' un',g:true},
+    {l:'Ped. Pendente',v:f(tPP)+' un',g:false},
     {l:'Peso Total (Kg)',v:f(tPS,'kg'),g:false},
     {l:'Investimento R$',v:f(tVS,'brl'),g:false},
     {l:'SKUs com Nec.',v:f(tSK)+' SKUs',g:false},
