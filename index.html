@@ -1020,8 +1020,8 @@ function bC(e){
 ════════════════════════════════════ */
 function buildMesSeg(){
   // Banner
-  let tMS=0,tNS=0,tPS=0,tVS=0,tSK=0;
-  Object.values(D).forEach(d=>{tMS+=d.rec_meta_seg;tNS+=d.nec_seg;tPS+=d.peso_seg;tVS+=d.nec_val;tSK+=d.skus_nec_seg;});
+  let tMS=0,tNS=0,tPS=0,tVS=0,tSK=0,tPP=0;
+  Object.values(D).forEach(d=>{tMS+=d.rec_meta_seg;tNS+=d.nec_seg;tPS+=d.peso_seg;tVS+=d.nec_val;tSK+=d.skus_nec_seg;tPP+=(d.ped_pend||0);});
   document.getElementById('msb-kpis').innerHTML=[
     {l:'Meta Receita Seg.',v:f(tMS,'brl'),g:true},
     {l:'Nec. Compra Total',v:f(tNS)+' un',g:true},
@@ -1042,6 +1042,7 @@ function buildMesSeg(){
       <div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Cobertura</div><div class="cv ${d.cobertura_seg>=80?'g':d.cobertura_seg>=50?'o':'r'}">${f(d.cobertura_seg,'pct')}</div></div>
       <div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Meta Seg.</div><div class="cv p">${f(d.meta_seg)} un</div></div>
       <div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Nec. Compra</div><div class="cv o">${f(d.nec_seg)} un</div></div>
+      <div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Ped. Pendente</div><div class="cv t">${f(d.ped_pend||0)} un</div></div>
       <div style="margin-bottom:8px"><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Peso (Kg)</div><div class="cv t">${f(d.peso_seg,'kg')}</div></div>
       <div><div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Investimento</div><div class="cv r">${f(d.nec_val,'brl')}</div></div>
     </div>`).join('');
