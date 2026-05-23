@@ -460,7 +460,7 @@ th.sort-desc::after{content:' ▼';font-size:10px;color:var(--purple);}
         <thead><tr>
           <th>Categoria</th>
           <th class="r">Meta Atual (Q)</th><th class="r">Meta Atual (R$)</th><th class="r">Proj. Atual</th><th class="r">Receita Atual</th>
-          <th class="r ms">Meta Seg. (Q)</th><th class="r ms">Meta Seg. (R$)</th><th class="r ms">Estq. Mín.</th>
+          <th class="r ms">Meta Seg. (Q)</th><th class="r ms">Meta Seg. (R$)</th><th class="r ms">Estq. Mês Seg.</th>
           <th class="r ms" onclick="sT('tbl-ms-cat',6)">Nec. Compra ↕</th>
           <th class="r ms" onclick="sT('tbl-ms-cat',7)">Peso Kg ↕</th>
           <th class="r ms" onclick="sT('tbl-ms-cat',8)">Invest. R$ ↕</th>
@@ -492,21 +492,16 @@ th.sort-desc::after{content:' ▼';font-size:10px;color:var(--purple);}
         <thead><tr>
           <th>Canal</th><th>SKU</th><th>Descrição</th><th>Marca</th><th>Categoria</th>
           <th>Comprador</th><th>Pareto</th>
-          <th class="r">Peso(Kg)</th>
-          <th class="r">Custo Unit.</th>
-          <th class="r">Meta Atual (Q)</th>
-          <th class="r">Meta Atual (R$)</th>
-          <th class="r">Proj. Atual (Q)</th>
-          <th class="r ms">Meta Seg. (Q)</th>
-          <th class="r ms">Meta Seg. (R$)</th>
-          <th class="r ms">Estq. Seg. (Q)</th>
-          <th class="r ms">Estq. Mín. Seg.</th>
-          <th class="r ms">Ped. Pend. (Q)</th>
-          <th class="r ms">Ped. Pend. (R$)</th>
+          <th class="r">Peso(Kg)</th><th class="r">Custo</th>
+          <th class="r">Meta Atual (Q)</th><th class="r">Meta Atual (R$)</th>
+          <th class="r">Proj. Atual</th>
+          <th class="r ms">Meta Seg. (Q)</th><th class="r ms">Meta Seg. (R$)</th>
+          <th class="r ms">Estq. Seg.</th><th class="r ms">Estq. Mín. Seg.</th>
+          <th class="r ms">Ped. Pend. (Q)</th><th class="r ms">Ped. Pend. (R$)</th>
           <th class="r ms">LT(d)</th>
-          <th class="r ms" onclick="sT('tbl-ms-all',19)">Nec. Compra ↕</th>
-          <th class="r ms" onclick="sT('tbl-ms-all',20)">Peso Total Kg ↕</th>
-          <th class="r ms" onclick="sT('tbl-ms-all',21)">Invest. R$ ↕</th>
+          <th class="r ms" onclick="sT('${sId}',19)">Nec. Compra ↕</th>
+          <th class="r ms" onclick="sT('${sId}',20)">Peso Kg ↕</th>
+          <th class="r ms" onclick="sT('${sId}',21)">Invest. R$ ↕</th>
           <th class="ms">St. Estq.</th><th class="ms">St. Venda</th>
         </tr></thead>
         <tbody id="body-ms-all"></tbody>
@@ -892,6 +887,8 @@ function bC(e){
     <td><span class="pill ${stEC(r['Status Estoque'])}">${r['Status Estoque']}</span></td>
     <td class="r">${f(r['Estoque Total (Q)'])}</td>
     <td class="r" style="color:var(--orange);font-weight:700">${f(r['Necessidade Compra (Q)'])}</td>
+    <td class="r" style="color:${(r['Ped. Pendente [Dig] (Q)']||0)>0?'var(--purple)':'inherit'}">${f(r['Ped. Pendente [Dig] (Q)']||0)}</td>
+    <td class="r" style="color:${(r['Ped. Pendente [Dig] (Q)']||0)>0?'var(--purple)':'inherit'}">${f((r['Ped. Pendente [Dig] (Q)']||0)*(r['Preço Praticado ($)']||0),'brl')}</td>
     <td class="r">${r['Leadtime Médio (Dias)']}d</td>
   </tr>`;
 
@@ -928,6 +925,7 @@ function bC(e){
 
   // Mês seguinte rows
   const mkRS=(r)=>`<tr>
+    <td><span class="pill pi-p" style="font-size:10px">${NM[e]}</span></td>
     <td>${r['Produto']}</td>
     <td title="${r['Descrição']}" style="max-width:280px;overflow:hidden;text-overflow:ellipsis">${r['Descrição'].substring(0,50)}…</td>
     <td>${r['Marca']}</td>
@@ -942,6 +940,7 @@ function bC(e){
     <td class="r ms">${f(r['Estoque Mês Seguinte (Q)'])}</td>
     <td class="r ms">${f(r['Estoque Mínimo Mês Seguinte (Q)'])}</td>
     <td class="r ms">${f(r['Ped. Pendente [Dig] (Q)'])}</td>
+    <td class="r ms" style="color:${(r['Ped. Pendente [Dig] (Q)']||0)>0?'var(--purple)':'inherit'}">${f((r['Ped. Pendente [Dig] (Q)']||0)*(r['Preço Custo ($)']||0),'brl')}</td>
     <td class="r ms">${r['Leadtime Médio (Dias)']}d</td>
     <td class="r ms" style="color:var(--orange);font-weight:800;font-size:13px">${f(r['Necessidade Compra Mês Seguinte (Q)'])}</td>
     <td class="r ms" style="color:var(--gdark);font-weight:800">${f(r['Nec_Peso_Seg'],'kg')}</td>
@@ -1003,7 +1002,7 @@ function bC(e){
     </div>
     <div class="legend-box"><span>Colunas em verde-água = dados Mês Seguinte</span></div>
     <div class="to"><div class="ts"><table id="${sId}">
-      <thead><tr><th>SKU</th><th>Descrição</th><th>Marca</th><th>Categoria</th><th>Comprador</th><th>Pareto</th><th class="r">Peso(Kg)</th><th class="r">Custo</th><th class="r">Proj. Atual</th><th class="r ms">Meta Seg. (Q)</th><th class="r ms">Meta Seg. (R$)</th><th class="r ms">Estq. Seg.</th><th class="r ms">Estq. Mín. Seg.</th><th class="r ms">Ped. Pend. (Q)</th><th class="r ms">Ped. Pend. (R$)</th><th class="r ms">LT(d)</th><th class="r ms" onclick="sT('${sId}',14)">Nec.Compra ↕</th><th class="r ms" onclick="sT('${sId}',15)">Peso Kg ↕</th><th class="r ms" onclick="sT('${sId}',16)">Invest.R$ ↕</th><th class="ms">St. Estq.</th><th class="ms">St. Venda</th></tr></thead>
+      <thead><tr><th>Canal</th><th>SKU</th><th>Descrição</th><th>Marca</th><th>Categoria</th><th>Comprador</th><th>Pareto</th><th class="r">Peso(Kg)</th><th class="r">Custo</th><th class="r">Meta Atual (Q)</th><th class="r">Meta Atual (R$)</th><th class="r">Proj. Atual</th><th class="r ms">Meta Seg. (Q)</th><th class="r ms">Meta Seg. (R$)</th><th class="r ms">Estq. Seg.</th><th class="r ms">Estq. Mín. Seg.</th><th class="r ms">Ped. Pend. (Q)</th><th class="r ms">Ped. Pend. (R$)</th><th class="r ms">LT(d)</th><th class="r ms" onclick="sT('${sId}',19)">Nec.Compra ↕</th><th class="r ms" onclick="sT('${sId}',20)">Peso Kg ↕</th><th class="r ms" onclick="sT('${sId}',21)">Invest.R$ ↕</th><th class="ms">St. Estq.</th><th class="ms">St. Venda</th></tr></thead>
       <tbody>${d.top_seg.map(r=>mkRS(r)).join('')}</tbody></table></div>
       <div class="tf"><span id="fts-${e}">Exibindo ${d.top_seg.length} SKUs</span><span>Invest. total: ${f(d.nec_val,'brl')} · Peso: ${f(d.peso_seg,'kg')}</span></div></div>
   `;
@@ -1113,6 +1112,7 @@ function buildMesSeg(){
         <td class="r">${f(r['Meta Mês Total (Q)']*r['Preço Praticado ($)'],'brl')}</td>
         <td class="r">${f(r['Projeção Venda (Q)'])}</td>
         <td class="r ms" style="color:var(--purple);font-weight:700">${f(r['Meta Mês Seguinte (Q)'])}</td>
+        <td class="r ms" style="color:var(--purple)">${f((r['Meta Mês Seguinte (Q)']||0)*(r['Preço Praticado ($)']||0),'brl')}</td>
         <td class="r ms">${f(r['Estoque Mês Seguinte (Q)'])}</td>
         <td class="r ms">${f(r['Estoque Mínimo Mês Seguinte (Q)'])}</td>
         <td class="r ms">${f(r['Ped. Pendente [Dig] (Q)'])}</td>
@@ -1470,4 +1470,6 @@ function sortAndRenderTodos(){
 initDashboard();
 </script>
 </body>
-</html>
+</html
+    <td class="r" style="color:${(r['Ped. Pendente [Dig] (Q)']||0)>0?'var(--purple)':'inherit'}">${f(r['Ped. Pendente [Dig] (Q)']||0)}</td>
+    <td class="r" style="color:${(r['Ped. Pendente [Dig] (Q)']||0)>0?'var(--purple)':'inherit'}">${f((r['Ped. Pendente [Dig] (Q)']||0)*(r['Preço Praticado ($)']||0),'brl')}</td>>
