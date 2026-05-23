@@ -115,6 +115,10 @@ def build(xlsx_path):
             'skus_nec_seg':int((d['Necessidade Compra Mês Seguinte (Q)']>0).sum()),
             'status_estq_seg':d.apply(ms_ste,axis=1).value_counts().to_dict(),
             'status_venda_seg':d.apply(ms_stv,axis=1).value_counts().to_dict(),
+            'ped_pend':     float(d['Ped. Pendente [Dig] (Q)'].sum()),
+            'ped_pend_val': float((d['Ped. Pendente [Dig] (Q)']*d['Preço Custo ($)']).sum()),
+            'ped_pend_prat':float((d['Ped. Pendente [Dig] (Q)']*d['Preço Praticado ($)']).sum()),
+            'ped_pend_skus':int((d['Ped. Pendente [Dig] (Q)']>0).sum()),
             'categoria':cats,'top100':t100,'top_seg':tseg,
             'criticos':criticos,'compradores':comps}
     return result
