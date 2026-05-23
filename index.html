@@ -823,7 +823,7 @@ function buildCharts(){
     safeChart('ch-dv-'+e,{type:'doughnut',data:{
       labels:['Acima Meta','Abaixo Meta'],
       datasets:[{data:[sv['Acima Meta']||0,sv['Abaixo Meta']||0],backgroundColor:['#8DC63F','#E07B1A'],borderWidth:0,hoverOffset:4}]
-    },options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:11},boxWidth:12}},datalabels:{color:'#000',font:{size:9,weight:'700'},formatter:(v,ctx)=>{if(!v||v===0)return'';const tot=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);return tot>0?Math.round(v/tot*100)+'%':'';}}}}}});
+    },options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:11},boxWidth:12}},datalabels:{color:'#000',font:{size:9,weight:'700'},formatter:(v,ctx)=>{if(!v||v===0)return'';const tot=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);return tot>0?Math.round(v/tot*100)+'%':'';}}}}});
   });
   safeChart('ch-meta-comp',{type:'bar',data:{labels:lbls,datasets:[
     {label:'Meta Mês Atual',data:emps.map(e=>D[e].meta_qtd),backgroundColor:'#BDE07A',borderRadius:4},
@@ -1011,7 +1011,7 @@ function bC(e){
     const se=d.status_estoque;
     safeChart(`cc-estq-${e}`,{type:'doughnut',data:{
       labels:Object.keys(se),datasets:[{data:Object.values(se),backgroundColor:['#D63B3B','#E07B1A','#8DC63F'],borderWidth:0,hoverOffset:4}]
-    },options:{responsive:true,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:11},boxWidth:12}},datalabels:{color:'#000',font:{size:9,weight:'700'},formatter:(v,ctx)=>{if(!v||v===0)return'';const tot=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);return tot>0?Math.round(v/tot*100)+'%':'';}}}}}});
+    },options:{responsive:true,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#555',font:{size:11},boxWidth:12}},datalabels:{color:'#000',font:{size:9,weight:'700'},formatter:(v,ctx)=>{if(!v||v===0)return'';const tot=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);return tot>0?Math.round(v/tot*100)+'%':'';}}}}});
   },60);
 }
 
