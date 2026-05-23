@@ -626,7 +626,8 @@ th.sort-desc::after{content:' ▼';font-size:10px;color:var(--purple);}
 </div>
 
 <script>
-Chart.register(ChartDataLabels);
+// Registrar plugin datalabels com proteção
+try{ if(typeof ChartDataLabels!=='undefined') Chart.register(ChartDataLabels); }catch(e){ console.warn('datalabels nao carregou:',e); }
 const D={};
 const NM={'1':'Marketplace','995':'Shopee Full','996':'Amazon Full','997':'Meli Full'};
 const CL={'1':'#8DC63F','995':'#E07B1A','996':'#1E6FBB','997':'#6B3FA0'};
@@ -1266,6 +1267,8 @@ async function refreshData(){
   if(ri)ri.className='';if(btn)btn.disabled=false;_busy=false;
 }
 async function initDashboard(){
+  // Garantir registro do datalabels
+  try{ if(typeof ChartDataLabels!=='undefined') Chart.register(ChartDataLabels); }catch(e){}
   const src=document.getElementById('data-source');
   if(src)src.textContent='Carregando...';
   try{
