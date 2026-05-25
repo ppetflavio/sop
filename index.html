@@ -732,6 +732,7 @@ function buildSemAtual(){
       </div>
       <div class="sem-kpis">
         <div><div class="sk-lbl">Realizado</div><div class="sk-val g">${f(d.real_receita,'brl')}</div></div>
+        <div><div class="sk-lbl">Meta Planejada</div><div class="sk-val p">${f(d.meta_plan_at||0,'brl')}</div></div>
         <div><div class="sk-lbl">Meta</div><div class="sk-val">${f(d.meta_receita,'brl')}</div></div>
         <div><div class="sk-lbl">Aderência</div><div class="sk-val ${ac}">${f(d.aderencia_pct,'pct')}</div></div>
         <div><div class="sk-lbl">Projeção</div><div class="sk-val">${f(d.proj_receita,'brl')}</div></div>
@@ -763,6 +764,7 @@ function buildSemSeg(targetId){
         <span class="sem-pill ${sClS(cob)}">${sLblS(cob)}</span>
       </div>
       <div class="sem-kpis">
+        <div><div class="sk-lbl">Meta Plan. Seg.</div><div class="sk-val p">${f(d.meta_plan_seg||0,'brl')}</div></div>
         <div><div class="sk-lbl">Meta Mês Seg.</div><div class="sk-val p">${f(d.rec_meta_seg,'brl')}</div></div>
         <div><div class="sk-lbl">Estoque Proj.</div><div class="sk-val">${f(d.estq_seg)+'un'}</div></div>
         <div><div class="sk-lbl">Cobertura</div><div class="sk-val ${ac}">${f(cob,'pct')}</div></div>
@@ -785,10 +787,11 @@ function buildSemSeg(targetId){
    KPIs CONSOLIDADOS MÊS ATUAL
 ════════════════════════════════════ */
 function buildKpisAtual(){
-  let tM=0,tR=0,tP=0,tE=0,tN=0;
-  Object.values(D).forEach(d=>{tM+=d.meta_receita;tR+=d.real_receita;tP+=d.proj_receita;tE+=d.estq_valor;tN+=d.nec_qtd;});
+  let tM=0,tR=0,tP=0,tE=0,tN=0,tMP=0;
+  Object.values(D).forEach(d=>{tM+=d.meta_receita;tR+=d.real_receita;tP+=d.proj_receita;tE+=d.estq_valor;tN+=d.nec_qtd;tMP+=(d.meta_plan_at||0);});
   const adh=(tR/tM*100).toFixed(1),pvm=(tP/tM*100).toFixed(1);
   [
+    {l:'Meta Planejada',v:f(tMP,'brl'),vc:'p',a:'p',sub:'S\u0026OP Mês Atual'},
     {l:'Meta Receita',v:f(tM,'brl'),vc:'p',a:'p',sub:'Mês atual'},
     {l:'Receita Realizada',v:f(tR,'brl'),vc:'g',a:'g',sub:adh+'% da meta',bv:adh+'%',bc:+adh>=70?'bg-g':'bg-o'},
     {l:'Projeção Fechamento',v:f(tP,'brl'),vc:+pvm>=100?'g':'o',a:+pvm>=100?'g':'o',sub:'Tendência atual',bv:pvm+'% vs meta',bc:+pvm>=100?'bg-g':'bg-o'},
@@ -798,6 +801,7 @@ function buildKpisAtual(){
     document.getElementById('kpis-atual').children[i]&&(document.getElementById('kpis-atual').children[i].remove());
   });
   document.getElementById('kpis-atual').innerHTML=[
+    {l:'Meta Planejada',v:f(tMP,'brl'),vc:'p',a:'p',sub:'S\u0026OP Mês Atual'},
     {l:'Meta Receita',v:f(tM,'brl'),vc:'p',a:'p',sub:'Mês atual'},
     {l:'Receita Realizada',v:f(tR,'brl'),vc:'g',a:'g',sub:adh+'% da meta',bv:adh+'%',bc:+adh>=70?'bg-g':'bg-o'},
     {l:'Projeção Fechamento',v:f(tP,'brl'),vc:+pvm>=100?'g':'o',a:+pvm>=100?'g':'o',sub:'Tendência atual',bv:pvm+'% vs meta',bc:+pvm>=100?'bg-g':'bg-o'},
@@ -810,9 +814,10 @@ function buildKpisAtual(){
    KPIs CONSOLIDADOS MÊS SEGUINTE
 ════════════════════════════════════ */
 function buildKpisSeg(){
-  let tMS=0,tNS=0,tPS=0,tVS=0,tSK=0,tPP=0;
-  Object.values(D).forEach(d=>{tMS+=d.rec_meta_seg;tNS+=d.nec_seg;tPS+=d.peso_seg;tVS+=d.nec_val;tSK+=d.skus_nec_seg;tPP+=(d.ped_pend||0);});
+  let tMS=0,tNS=0,tPS=0,tVS=0,tSK=0,tPP=0,tMPS=0;
+  Object.values(D).forEach(d=>{tMS+=d.rec_meta_seg;tNS+=d.nec_seg;tPS+=d.peso_seg;tVS+=d.nec_val;tSK+=d.skus_nec_seg;tPP+=(d.ped_pend||0);tMPS+=(d.meta_plan_seg||0);});
   document.getElementById('kpis-seg').innerHTML=[
+    {l:'Meta Planejada Seg.',v:f(tMPS,'brl'),vc:'p',a:'p',sub:'S\u0026OP Mês Seguinte'},
     {l:'Meta Receita Mês Seg.',v:f(tMS,'brl'),vc:'p',a:'p',sub:'Receita projetada'},
     {l:'Necessidade Compra',v:f(tNS)+' un',vc:'o',a:'o',sub:tSK+' SKUs com necessidade'},
     {l:'Ped. Pendente [Dig]',v:f(tPP)+' un',vc:'t',a:'t',sub:f(Object.values(D).reduce((a,d)=>a+(d.ped_pend_val||0),0),'brl')},
@@ -875,6 +880,7 @@ function bC(e){
   const kAtual=[
     {l:'SKUs Ativos',v:f(d.skus),vc:'p',a:'p',sub:'Portfólio'},
     {l:'Receita Realizada',v:f(d.real_receita,'brl'),vc:'g',a:'g',sub:f(d.aderencia_pct,'pct')+' da meta'},
+    {l:'Meta Planejada',v:f(d.meta_plan_at||0,'brl'),vc:'p',a:'p',sub:'S&OP Mês Atual'},
     {l:'Meta Receita',v:f(d.meta_receita,'brl'),vc:'',a:'p',sub:'Mês atual'},
     {l:'Projeção',v:f(d.proj_receita,'brl'),vc:d.proj_vs_meta_pct>=100?'g':'o',a:d.proj_vs_meta_pct>=100?'g':'o',sub:f(d.proj_vs_meta_pct,'pct')+' vs meta'},
     {l:'Estoque (Custo)',v:f(d.estq_valor,'brl'),vc:'b',a:'b',sub:'Valor total'},
@@ -882,6 +888,7 @@ function bC(e){
   ];
   // KPIs mês seguinte
   const kSeg=[
+    {l:'Meta Plan. Seg.',v:f(d.meta_plan_seg||0,'brl'),vc:'p',a:'p',sub:'S&OP Mês Seguinte'},
     {l:'Meta Mês Seguinte',v:f(d.meta_seg)+' un',vc:'p',a:'p',sub:f(d.rec_meta_seg,'brl')},
     {l:'Estoque Projetado',v:f(d.estq_seg)+' un',vc:d.cobertura_seg>=80?'g':'o',a:d.cobertura_seg>=80?'g':'o',sub:'Cobertura: '+f(d.cobertura_seg,'pct')},
     {l:'Nec. Compra',v:f(d.nec_seg)+' un',vc:'o',a:'o',sub:d.skus_nec_seg+' SKUs'},
@@ -1054,6 +1061,7 @@ function buildMesSeg(){
   let tMS=0,tNS=0,tPS=0,tVS=0,tSK=0,tPP=0;
   Object.values(D).forEach(d=>{tMS+=d.rec_meta_seg;tNS+=d.nec_seg;tPS+=d.peso_seg;tVS+=d.nec_val;tSK+=d.skus_nec_seg;tPP+=(d.ped_pend||0);});
   document.getElementById('msb-kpis').innerHTML=[
+    {l:'Meta Planejada Seg.',v:f(Object.values(D).reduce((a,d)=>a+(d.meta_plan_seg||0),0),'brl'),g:true},
     {l:'Meta Receita Seg.',v:f(tMS,'brl'),g:true},
     {l:'Nec. Compra Total',v:f(tNS)+' un',g:true},
     {l:'Ped. Pendente',v:f(tPP)+' un · '+f(Object.values(D).reduce((a,d)=>a+(d.ped_pend_val||0),0),'brl'),g:false},

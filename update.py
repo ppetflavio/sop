@@ -34,6 +34,9 @@ def build(xlsx_path):
         f  = lambda col: float(d[col].sum())
         fp = lambda c1,c2: float((d[c1]*d[c2]).sum())
         mq=f('Meta Mês Total (Q)'); rq=f('Realizado Acumulado (Q)'); pq=f('Projeção Venda (Q)')
+        # Meta Planejada S&OP (valor financeiro direto)
+        mp_at  = float(d['Meta Mês Atual ($)  S&OP'].sum())  if 'Meta Mês Atual ($)  S&OP'  in d.columns else 0.0
+        mp_seg = float(d['Meta Mês Seg. ($)  S&OP'].sum())   if 'Meta Mês Seg. ($)  S&OP'   in d.columns else 0.0
         ms=f('Meta Mês Seguinte (Q)'); es=f('Estoque Mês Seguinte (Q)')
         ns=f('Necessidade Compra Mês Seguinte (Q)')
         cats=[]
@@ -116,6 +119,8 @@ def build(xlsx_path):
             'status_estq_seg':d.apply(ms_ste,axis=1).value_counts().to_dict(),
             'status_venda_seg':d.apply(ms_stv,axis=1).value_counts().to_dict(),
             'ped_pend':     float(d['Ped. Pendente [Dig] (Q)'].sum()),
+            'meta_plan_at':  mp_at,
+            'meta_plan_seg': mp_seg,
             'ped_pend_val': float((d['Ped. Pendente [Dig] (Q)']*d['Preço Custo ($)']).sum()),
             'ped_pend_prat':float((d['Ped. Pendente [Dig] (Q)']*d['Preço Praticado ($)']).sum()),
             'ped_pend_skus':int((d['Ped. Pendente [Dig] (Q)']>0).sum()),
