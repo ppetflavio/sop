@@ -2,8 +2,8 @@ name: Atualiza Dashboard S&OP
 
 on:
   push:
-    branches:
-      - main
+    paths:
+      - 'planilha/*.csv'
 
 permissions:
   contents: write
@@ -19,18 +19,18 @@ jobs:
           python-version: '3.11'
 
       - name: Instalar dependências
-        run: pip install pandas openpyxl numpy
+        run: pip install pandas numpy
 
-      - name: Gerar data.json e products.json
+      - name: Gerar data.json e produtos.json
         run: |
-          XLSX=$(find planilha -name "*.xlsx" | head -1)
-          echo "Processando: $XLSX"
-          python update.py "$XLSX"
+          CSV=$(find planilha -name "*.csv" | sort | tail -1)
+          echo "Processando: $CSV"
+          python atualizar.py "$CSV"
 
-      - name: Publicar arquivos
+      - name: Publicar JSONs
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add data.json products.json
+          git add data.json produtos.json
           git diff --staged --quiet || git commit -m "Auto: S&OP $(date +'%d/%m/%Y %H:%M')"
           git push
