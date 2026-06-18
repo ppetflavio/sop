@@ -2,10 +2,7 @@
 """
 atualizar.py — Popular Pet S&OP
 Lê o CSV exportado pelo XLSM e gera data.json + produtos.json para o GitHub Pages.
-
-Uso:
-    python atualizar.py planilha/BaseGeral_20260618_132740.csv
-    python atualizar.py              ← busca automaticamente o .csv em planilha/
+Lógica consolidada idêntica à aba Compras do XLSM v5.
 """
 
 import sys, os, json, glob
@@ -13,366 +10,281 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-# ─────────────────────────────────────────────
-# 1. LOCALIZAR O CSV
-# ─────────────────────────────────────────────
+# ─── 1. LOCALIZAR O CSV ──────────────────────────────────────
 def find_csv(arg=None):
     if arg and os.path.isfile(arg):
         return arg
-    # busca automática dentro da pasta planilha/
     candidates = sorted(glob.glob("planilha/*.csv"), key=os.path.getmtime, reverse=True)
     if candidates:
         print(f"[INFO] CSV encontrado: {candidates[0]}")
         return candidates[0]
-    raise FileNotFoundError("Nenhum CSV encontrado em planilha/. Forneça o caminho como argumento.")
+    raise FileNotFoundError("Nenhum CSV encontrado em planilha/.")
 
 csv_path = find_csv(sys.argv[1] if len(sys.argv) > 1 else None)
 
-# ─────────────────────────────────────────────
-# 2. LER E LIMPAR O CSV
-# ─────────────────────────────────────────────
+# ─── 2. LER E LIMPAR ─────────────────────────────────────────
 print(f"[INFO] Lendo: {csv_path}")
 df = pd.read_csv(csv_path, sep=None, engine='python', dtype=str)
-
-# Remove BOM da primeira coluna se presente
 df.columns = [c.replace('\ufeff', '').strip() for c in df.columns]
 
-# Função para converter string BR → float  (ex: "66,03 " → 66.03)
-def br_float(series):
-    return (
-        series.astype(str)
-              .str.strip()
-              .str.replace(r'[%\s]', '', regex=True)   # remove % e espaços
-              .str.replace('.', '', regex=False)         # remove sep milhar BR
-              .str.replace(',', '.', regex=False)        # vírgula → ponto decimal
-              .pipe(pd.to_numeric, errors='coerce')
-              .fillna(0)
-    )
+def br_float(s):
+    return (s.astype(str).str.strip()
+             .str.replace(r'[%\s]', '', regex=True)
+             .str.replace('.', '', regex=False)
+             .str.replace(',', '.', regex=False)
+             .pipe(pd.to_numeric, errors='coerce')
+             .fillna(0))
 
-# Colunas numéricas diretas (pandas já leu como número ou precisam de conversão)
+df['Empresa'] = pd.to_numeric(df['Empresa'].astype(str).str.strip(), errors='coerce').fillna(0).astype(int)
+df['Produto'] = df['Produto'].astype(str).str.strip()
+
 NUM_COLS = [
     'Meta Atual (Q)', 'Meta Atual (C$)', 'Meta Atual ($)',
     'Acum Meta (Q)', 'Acum Realizado (Q)', 'Acum Meta ($)', 'Acum Realizado ($)', 'Acum Realizado (C$)',
-    'Meta - Realizado (Q)',
-    'Reprojeção (Q)', 'Reprojeção (C$)', 'Reprojeção ($)',
+    'Meta - Realizado (Q)', 'Reprojeção (Q)', 'Reprojeção (C$)', 'Reprojeção ($)',
     'Necess. (Q) Atual.', 'Necess. (C$) Atual.', 'Necess. ($) Atual.',
-    'Necess. (Q) Atual Rep', 'Necess. (C$) Atual Rep', 'Necess. ($) Atual Rep',
-    'Reprojeção x Meta (Q)', 'Desvio Abaixo ($)', 'Desvio Acima ($)',
-    'Reprojeção - Realizado (Q)',
-    'Estoque L1 (Q)', 'Estoque L1 (C$)', 'Estoque L1 ($)',
-    'Estoque Bling (Q)', 'Estoque Blin Ajust. (Q)', 'Estoque Bling (C$)', 'Estoque Bling ($)',
-    'Estoque Full (Q)', 'Estoque Full (C$)', 'Estoque Full ($)',
     'Estoque Total (Q)', 'Estoque Total (C$)', 'Estoque Total ($)',
     'Estoque Mínimo (Q)', 'Est. Total x Est. Mínimo (Q)',
     'Estoque Meta (Q)', 'Estoque Meta (C$)', 'Estoque Meta ($)',
     'Pedidos Pendentes (Q)', 'Pedidos Pendentes (C$)', 'Pedidos Pendentes ($)',
-    'Estoque Total + Ped. Pendente (Q)', 'Estoque Total + Ped. Pendente (C$)', 'Estoque Total + Ped. Pendente ($)',
+    'Estoque Total + Ped. Pendente (Q)',
     'Estoque Futuro 1 (Q)', 'Estoque Futuro 1  (C$)', 'Estoque Futuro 1  ($)',
     'Estoque Meta Seg (Q)', 'Estoque Meta Seg (C$)', 'Estoque Meta Seg ($)',
     'Meta Seguinte (Q)', 'Meta Seguinte (C$)', 'Meta Seguinte ($)',
     'Meta Seg. Nec (Q)', 'Meta Seg. Nec (C$)', 'Meta Seg. Nec ($)',
-    'Estoque Futuro 2 (Q)', 'Estoque Futuro 2 (C$)', 'Estoque Futuro 2 ($)',
-    'Reprojeção x Estoque (Q)', 'Reprojeção x Estoque (C$)', 'Reprojeção x Estoque ($)',
-    'Reprojeção x Estoque Nec. (Q)', 'Reprojeção x Estoque Nec. (C$)', 'Reprojeção x Estoque Nec. ($)',
+    'Estoque Futuro 2 (Q)',
     'Ped. Pendente [Dig] (Q)', 'Ped. Pendente [Dig] ($)',
     'Ped. Pendente [999] (Q)', 'Ped. Pendente [999] (C$)',
-    'Leadtime Médio (Dias)',
-    'Calc. Venda diária', 'Calc. Dias Estoque',
+    'Leadtime Médio (Dias)', 'Calc. Venda diária', 'Calc. Dias Estoque',
     'Faturado XML Central (Q)',
-    '999 Estoque (Q)', '999 Ped. Pendente (Q)', '999 Estoque + Ped Pendente (Q)',
-    '999 Demanda Lojas 30d (Q)', '999 Disponível (Q)',
     'Nivel Estoque %', 'Nivel Estoque Rep %',
-    'Empresa',
+    'Desvio Abaixo ($)', 'Desvio Acima ($)',
 ]
-
-# Colunas monetárias em string BR (vírgula decimal)
-STR_MONEY_COLS = ['Vlr. Custo ($)', 'Vlr. Venda ($)', 'Vlr Ticket ($)']
-
 for c in NUM_COLS:
     if c in df.columns:
         df[c] = br_float(df[c])
 
-for c in STR_MONEY_COLS:
+for c in ['Vlr. Custo ($)', 'Vlr. Venda ($)', 'Vlr Ticket ($)']:
     if c in df.columns:
         df[c] = br_float(df[c])
 
-# Percentuais como string (ex: "4%", "26,1%") → float puro
-for c in ['Margem  (%)', 'Impostos (%)', 'Meta %']:
+for c in ['Margem  (%)', 'Impostos (%)']:
     if c in df.columns:
-        df[c] = (
-            df[c].astype(str)
-                 .str.strip()
-                 .str.replace('%', '', regex=False)
-                 .str.replace(',', '.', regex=False)
-                 .pipe(pd.to_numeric, errors='coerce')
-                 .fillna(0)
-        )
+        df[c] = (df[c].astype(str).str.strip()
+                  .str.replace('%', '', regex=False)
+                  .str.replace(',', '.', regex=False)
+                  .pipe(pd.to_numeric, errors='coerce').fillna(0))
 
-# Empresa como int
-df['Empresa'] = df['Empresa'].astype(int)
+print(f"[INFO] {len(df)} linhas | {df['Empresa'].unique().tolist()}")
 
-# Produto/SKU como string limpa
-df['Produto'] = df['Produto'].astype(str).str.strip()
+# ─── 3. LÓGICA CONSOLIDADA (igual XLSM aba Compras v5) ───────
+# Agrupa todas empresas por SKU para calcular a necessidade real
+meta_cons   = df.groupby('Produto')['Meta Atual (Q)'].sum()
+real_cons   = df.groupby('Produto')['Acum Realizado (Q)'].sum()
+est_cons    = df.groupby('Produto')['Estoque Total (Q)'].sum()
+pp_cons     = df.groupby('Produto')['Pedidos Pendentes (Q)'].sum()
+estmin_cons = df.groupby('Produto')['Estoque Mínimo (Q)'].sum()
+metaseg_cons= df.groupby('Produto')['Meta Seguinte (Q)'].sum()
 
-print(f"[INFO] {len(df)} linhas | {len(df.columns)} colunas | Empresas: {sorted(df['Empresa'].unique())}")
+e1 = df[df['Empresa'] == 1].copy()
+e1['meta_cons']    = e1['Produto'].map(meta_cons)
+e1['real_cons']    = e1['Produto'].map(real_cons)
+e1['est_cons']     = e1['Produto'].map(est_cons)
+e1['pp_cons']      = e1['Produto'].map(pp_cons)
+e1['estmin_cons']  = e1['Produto'].map(estmin_cons)
+e1['metaseg_cons'] = e1['Produto'].map(metaseg_cons)
 
-# ─────────────────────────────────────────────
-# 3. HELPER: converter linha para dict JSON-safe
-# ─────────────────────────────────────────────
-def safe_val(v):
-    if isinstance(v, float):
-        if np.isnan(v) or np.isinf(v):
-            return 0
-        return round(v, 4)
+# necLiq consolidada = MAX(0, EstMin.total - Estoque.total - PP.total)
+e1['nec_liq_cons'] = (e1['estmin_cons'] - e1['est_cons'] - e1['pp_cons']).clip(lower=0)
+e1['_invest']      = e1['nec_liq_cons'] * e1['Vlr. Custo ($)']
+e1['_fatur']       = e1['nec_liq_cons'] * e1['Vlr Ticket ($)']
+
+# ─── 4. FILTROS DE COERÊNCIA (XLSM aba Compras) ──────────────
+# 1) ATIVO  2) meta_cons > 0  3) real_cons < meta_cons  4) nec_liq > 0
+filtro_compras = (
+    (e1['Status Compras'] == 'ATIVO') &
+    (e1['meta_cons'] > 0) &
+    (e1['real_cons'] < e1['meta_cons']) &
+    (e1['nec_liq_cons'] > 0)
+)
+compras = e1[filtro_compras].copy().sort_values('_invest', ascending=False)
+
+invest_total = float(compras['_invest'].sum())
+fatur_total  = float(compras['_fatur'].sum())
+lucro_total  = fatur_total - invest_total
+margem_total = lucro_total / fatur_total * 100 if fatur_total > 0 else 0
+
+print(f"[INFO] Compras: {len(compras)} SKUs | Invest R${invest_total:,.0f} | Fat R${fatur_total:,.0f} | Margem {margem_total:.1f}%")
+
+# ─── 5. BREAKDOWN MÊS ATUAL × MÊS SEGUINTE ──────────────────
+# Peso Mês Atual por SKU = estmin_parte_atual / estmin_total
+# (simplificado: usar proporção do estoque mínimo próprio da emp1)
+e1_comp = compras.copy()
+e1_comp['est_min_e1'] = e1_comp['Estoque Mínimo (Q)']
+total_min = e1_comp['estmin_cons'].replace(0, np.nan)
+e1_comp['peso_atual'] = (e1_comp['Estoque Mínimo (Q)'] / total_min).fillna(0.5)
+invest_atual = float((e1_comp['_invest'] * e1_comp['peso_atual']).sum())
+invest_seg   = invest_total - invest_atual
+fatur_atual  = float((e1_comp['_fatur'] * e1_comp['peso_atual']).sum())
+fatur_seg    = fatur_total - fatur_atual
+
+# ─── 6. HELPER JSON-SAFE ─────────────────────────────────────
+def safe(v):
+    if isinstance(v, (float, np.floating)):
+        return 0 if (np.isnan(v) or np.isinf(v)) else round(float(v), 4)
     if isinstance(v, (np.integer,)):
         return int(v)
-    if isinstance(v, (np.floating,)):
-        return round(float(v), 4)
     if pd.isna(v) if not isinstance(v, (list, dict)) else False:
-        return ""
+        return ''
     return v
 
-# ─────────────────────────────────────────────
-# 4. LÓGICA DE NEGÓCIO — Nec. Líquida Global
-#    Pedidos pendentes são globais (entram na Empresa 1 e cobrem todos os canais)
-#    Nec. Líquida = MAX(0, Nec.Compra − PP_global_por_SKU)
-# ─────────────────────────────────────────────
-# PP global por SKU = soma dos Pedidos Pendentes (Q) de TODAS as empresas daquele SKU
-# (na prática só Empresa 1 tem PP, mas a regra é global)
-pp_global = df.groupby('Produto')['Pedidos Pendentes (Q)'].sum().rename('PP_Global')
-df = df.join(pp_global, on='Produto')
-
-df['Nec. Liquida (Q)'] = df.apply(
-    lambda r: max(0, r['Est. Total x Est. Mínimo (Q)'] - r['PP_Global']),
-    axis=1
-)
-
-# ─────────────────────────────────────────────
-# 5. RUPTURA — SKUs com estoque=0 / SKUs com venda>0
-# ─────────────────────────────────────────────
-def ruptura_stats(sub):
-    """Retorna dict com métricas de ruptura para um subconjunto do df."""
-    total_skus     = len(sub)
-    skus_zero      = int((sub['Estoque Total (Q)'] == 0).sum())
-    skus_com_venda = int((sub['Acum Realizado (Q)'] > 0).sum())
-    skus_ruptura   = int(((sub['Estoque Total (Q)'] == 0) & (sub['Acum Realizado (Q)'] > 0)).sum())
-    receita_risco  = round(float(
-        sub.loc[(sub['Estoque Total (Q)'] == 0) & (sub['Acum Realizado (Q)'] > 0), 'Meta Atual ($)'].sum()
-    ), 2)
-    taxa = round(skus_ruptura / skus_com_venda * 100, 1) if skus_com_venda > 0 else 0.0
+# ─── 7. ROWS PARA O DASHBOARD ────────────────────────────────
+def row_to_dict(r):
+    invest = safe(r['nec_liq_cons'] * r['Vlr. Custo ($)'])
+    fatur  = safe(r['nec_liq_cons'] * r['Vlr Ticket ($)'])
+    lucro  = round(float(fatur) - float(invest), 2) if invest and fatur else 0
+    margem = round(float(lucro) / float(fatur) * 100, 1) if fatur else 0
     return {
-        "total_skus":     total_skus,
-        "skus_zero":      skus_zero,
-        "skus_com_venda": skus_com_venda,
-        "skus_ruptura":   skus_ruptura,
-        "taxa_ruptura":   taxa,
-        "receita_risco":  receita_risco,
+        'sku':          safe(r['Produto']),
+        'descricao':    safe(r.get('Descrição', '')),
+        'categoria':    safe(r.get('Categoria', '')),
+        'marca':        safe(r.get('Marca', '')),
+        'comprador':    safe(r.get('Comprador', '')),
+        'status':       safe(r.get('Status Compras', '')),
+        'pareto':       safe(r.get('Pareto', '')),
+        'leadtime':     safe(r.get('Leadtime Médio (Dias)', 0)),
+        # Estoque Empresa 1
+        'est_e1':       safe(r['Estoque Total (Q)']),
+        'est_min_e1':   safe(r['Estoque Mínimo (Q)']),
+        # Consolidado rede
+        'est_cons':     safe(r['est_cons']),
+        'estmin_cons':  safe(r['estmin_cons']),
+        'pp_cons':      safe(r['pp_cons']),
+        # Necessidade
+        'nec_compra_q': safe(r['Est. Total x Est. Mínimo (Q)']),  # bruta emp1
+        'nec_liq_q':    safe(r['nec_liq_cons']),                  # líquida consolidada
+        'ped_pend_q':   safe(r['Pedidos Pendentes (Q)']),
+        'ped_dig_q':    safe(r['Ped. Pendente [Dig] (Q)']),
+        'data_ped_dig': safe(r.get('Data Pedido [Dig]', '')),
+        'prev_ent_dig': safe(r.get('Previsão Entrega [Dig]', '')),
+        # Preços
+        'vlr_custo':    safe(r['Vlr. Custo ($)']),
+        'vlr_venda':    safe(r['Vlr. Venda ($)']),
+        'vlr_ticket':   safe(r['Vlr Ticket ($)']),
+        # Financeiro da compra
+        'invest':       invest,
+        'fatur_esp':    fatur,
+        'lucro_bruto':  lucro,
+        'margem_pct':   margem,
+        # Meta
+        'meta_q':       safe(r['Meta Atual (Q)']),
+        'meta_v':       safe(r['Meta Atual ($)']),
+        'real_q':       safe(r['Acum Realizado (Q)']),
+        'real_v':       safe(r['Acum Realizado ($)']),
+        'meta_seg_q':   safe(r['Meta Seguinte (Q)']),
+        'meta_seg_cons':safe(r['metaseg_cons']),
+        'falta_meta_q': safe(r['meta_cons'] - r['real_cons']),
+        # Estoque futuro
+        'est_fut1_q':   safe(r.get('Estoque Futuro 1 (Q)', 0)),
     }
 
-# ─────────────────────────────────────────────
-# 6. MAPEAMENTO DE CANAIS
-# ─────────────────────────────────────────────
-CANAIS = {
-    "empresa1":   1,
-    "shopee":   995,
-    "amazon":   996,
-    "meli":     997,
-}
+rows_compras = [row_to_dict(r) for _, r in compras.iterrows()]
 
-def build_canal(empresa_id):
-    sub = df[df['Empresa'] == empresa_id].copy()
-    rows = []
-    for _, r in sub.iterrows():
-        rows.append({
-            # Identificação
-            "sku":          safe_val(r['Produto']),
-            "descricao":    safe_val(r.get('Descrição', '')),
-            "empresa_sku":  safe_val(r.get('Empresa|Sku', '')),
-            "categoria":    safe_val(r.get('Categoria', '')),
-            "marca":        safe_val(r.get('Marca', '')),
-            "comprador":    safe_val(r.get('Comprador', '')),
-            "status":       safe_val(r.get('Status Compras', '')),
-            "pareto":       safe_val(r.get('Pareto', '')),
-            "meta_flag":    safe_val(r.get('Meta', '')),
-            "full_flag":    safe_val(r.get('Full', '')),
-            # Preços
-            "vlr_custo":    safe_val(r['Vlr. Custo ($)']),
-            "vlr_venda":    safe_val(r['Vlr. Venda ($)']),
-            "vlr_ticket":   safe_val(r['Vlr Ticket ($)']),
-            # Mês Atual — Meta vs Realizado
-            "meta_q":       safe_val(r['Meta Atual (Q)']),
-            "meta_c":       safe_val(r['Meta Atual (C$)']),
-            "meta_v":       safe_val(r['Meta Atual ($)']),
-            "real_q":       safe_val(r['Acum Realizado (Q)']),
-            "real_v":       safe_val(r['Acum Realizado ($)']),
-            "gap_meta_q":   safe_val(r['Meta - Realizado (Q)']),
-            "meta_pct":     safe_val(r.get('Meta %', 0)),
-            "meta_st":      safe_val(r.get('Meta St.', '')),
-            # Acumulado
-            "acum_meta_q":  safe_val(r['Acum Meta (Q)']),
-            "acum_real_q":  safe_val(r['Acum Realizado (Q)']),
-            "acum_meta_v":  safe_val(r['Acum Meta ($)']),
-            "acum_real_v":  safe_val(r['Acum Realizado ($)']),
-            # Reprojeção
-            "repr_q":       safe_val(r['Reprojeção (Q)']),
-            "repr_v":       safe_val(r['Reprojeção ($)']),
-            "repr_x_meta":  safe_val(r['Reprojeção x Meta (Q)']),
-            "desvio_abaixo":safe_val(r['Desvio Abaixo ($)']),
-            "desvio_acima": safe_val(r['Desvio Acima ($)']),
-            # Necessidade Atual
-            "nec_q":        safe_val(r['Necess. (Q) Atual.']),
-            "nec_c":        safe_val(r['Necess. (C$) Atual.']),
-            "nec_v":        safe_val(r['Necess. ($) Atual.']),
-            # Estoque
-            "est_total_q":  safe_val(r['Estoque Total (Q)']),
-            "est_total_c":  safe_val(r['Estoque Total (C$)']),
-            "est_total_v":  safe_val(r['Estoque Total ($)']),
-            "est_min_q":    safe_val(r['Estoque Mínimo (Q)']),
-            "est_bling_q":  safe_val(r['Estoque Bling (Q)']),
-            "est_full_q":   safe_val(r['Estoque Full (Q)']),
-            "est_l1_q":     safe_val(r['Estoque L1 (Q)']),
-            "nivel_est_pct":safe_val(r['Nivel Estoque %']),
-            "nivel_est_st": safe_val(r.get('Nivel Estoque St.', '')),
-            # Pedidos Pendentes
-            "ped_pend_q":   safe_val(r['Pedidos Pendentes (Q)']),
-            "ped_pend_v":   safe_val(r['Pedidos Pendentes ($)']),
-            "ped_dig_q":    safe_val(r['Ped. Pendente [Dig] (Q)']),
-            "ped_dig_v":    safe_val(r['Ped. Pendente [Dig] ($)']),
-            "data_ped_dig": safe_val(r.get('Data Pedido [Dig]', '')),
-            "prev_ent_dig": safe_val(r.get('Previsão Entrega [Dig]', '')),
-            # Nec. Compra (BI) — Empresa 1: compra ao fornecedor; Full: transferência
-            "nec_compra_q": safe_val(r['Est. Total x Est. Mínimo (Q)']),
-            # Nec. Líquida global (descontado PP compartilhado)
-            "nec_liq_q":    safe_val(r['Nec. Liquida (Q)']),
-            # Estoque Futuro / Mês Seguinte
-            "est_fut1_q":   safe_val(r['Estoque Futuro 1 (Q)']),
-            "est_fut1_v":   safe_val(r['Estoque Futuro 1  ($)']),
-            "est_fut2_q":   safe_val(r['Estoque Futuro 2 (Q)']),
-            "meta_seg_q":   safe_val(r['Meta Seguinte (Q)']),
-            "meta_seg_v":   safe_val(r['Meta Seguinte ($)']),
-            "meta_seg_nec_q": safe_val(r['Meta Seg. Nec (Q)']),
-            "est_meta_seg_q": safe_val(r['Estoque Meta Seg (Q)']),
-            # Cobertura
-            "dias_estoque": safe_val(r.get('Calc. Dias Estoque', 0)),
-            "venda_diaria": safe_val(r.get('Calc. Venda diária', 0)),
-            "leadtime":     safe_val(r.get('Leadtime Médio (Dias)', 0)),
-            # Saúde / Cálculos
-            "calc_saude":   safe_val(r.get('Calc. Validar Saúde', '')),
-            "calc_formatado": safe_val(r.get('Calc. Formatado', '')),
-            "st_oport":     safe_val(r.get('St.Oportunidades', '')),
-        })
-    return rows
+# ─── 8. COMPRADORES ──────────────────────────────────────────
+compradores = {}
+for row in rows_compras:
+    c = row['comprador'] or 'N/A'
+    if c not in compradores:
+        compradores[c] = {'nec_liq': 0, 'invest': 0, 'fatur': 0, 'lucro': 0, 'skus': 0, 'ped_pend': 0}
+    compradores[c]['nec_liq']  += row['nec_liq_q']
+    compradores[c]['invest']   += row['invest']
+    compradores[c]['fatur']    += row['fatur_esp']
+    compradores[c]['lucro']    += row['lucro_bruto']
+    compradores[c]['skus']     += 1
+    compradores[c]['ped_pend'] += row['ped_pend_q']
+for c in compradores:
+    compradores[c] = {k: round(float(v), 2) if isinstance(v, float) else v
+                      for k, v in compradores[c].items()}
+    f = compradores[c]['fatur']
+    compradores[c]['margem'] = round(compradores[c]['lucro'] / f * 100, 1) if f else 0
 
-# ─────────────────────────────────────────────
-# 7. GERAR TOTAIS POR CANAL (KPIs)
-# ─────────────────────────────────────────────
-def kpis_canal(empresa_id):
-    sub = df[df['Empresa'] == empresa_id]
-    rup = ruptura_stats(sub)
-    
-    # Nec. Líquida: só somar da Empresa 1 (evita dupla contagem com Fulls)
-    nec_liq_v = round(float(
-        sub.loc[sub['Nec. Liquida (Q)'] > 0, 'Nec. Liquida (Q)'].multiply(
-            sub.loc[sub['Nec. Liquida (Q)'] > 0, 'Vlr. Custo ($)']
-        ).sum()
-    ), 2)
-    
-    return {
-        "meta_q":        round(float(sub['Meta Atual (Q)'].sum()), 0),
-        "meta_v":        round(float(sub['Meta Atual ($)'].sum()), 2),
-        "real_q":        round(float(sub['Acum Realizado (Q)'].sum()), 0),
-        "real_v":        round(float(sub['Acum Realizado ($)'].sum()), 2),
-        "repr_q":        round(float(sub['Reprojeção (Q)'].sum()), 0),
-        "repr_v":        round(float(sub['Reprojeção ($)'].sum()), 2),
-        "nec_compra_q":  round(float(sub['Est. Total x Est. Mínimo (Q)'].sum()), 0),
-        "nec_compra_c":  round(float((sub['Est. Total x Est. Mínimo (Q)'] * sub['Vlr. Custo ($)']).sum()), 2),
-        "nec_liq_q":     round(float(sub['Nec. Liquida (Q)'].sum()), 0),
-        "nec_liq_v":     nec_liq_v,
-        "ped_pend_q":    round(float(sub['Pedidos Pendentes (Q)'].sum()), 0),
-        "ped_pend_v":    round(float(sub['Pedidos Pendentes ($)'].sum()), 2),
-        "est_total_q":   round(float(sub['Estoque Total (Q)'].sum()), 0),
-        "est_total_v":   round(float(sub['Estoque Total ($)'].sum()), 2),
-        "meta_seg_q":    round(float(sub['Meta Seguinte (Q)'].sum()), 0),
-        "meta_seg_v":    round(float(sub['Meta Seguinte ($)'].sum()), 2),
-        "meta_seg_nec_q":round(float(sub['Meta Seg. Nec (Q)'].sum()), 0),
-        "desvio_abaixo": round(float(sub['Desvio Abaixo ($)'].sum()), 2),
-        "desvio_acima":  round(float(sub['Desvio Acima ($)'].sum()), 2),
-        **rup,
-    }
+# ─── 9. RUPTURA ──────────────────────────────────────────────
+e1_all = df[df['Empresa'] == 1].copy()
+for c in ['Estoque Total (Q)', 'Acum Realizado (Q)', 'Meta Atual (Q)', 'Meta Atual ($)']:
+    if c in e1_all.columns:
+        e1_all[c] = br_float(e1_all[c]) if e1_all[c].dtype == object else e1_all[c]
 
-# ─────────────────────────────────────────────
-# 8. TOP-50 MARCA
-# ─────────────────────────────────────────────
-def top_marcas(empresa_id, n=50):
-    sub = df[df['Empresa'] == empresa_id].copy()
-    grp = sub.groupby('Marca').agg(
-        meta_v    =('Meta Atual ($)', 'sum'),
-        real_v    =('Acum Realizado ($)', 'sum'),
-        repr_v    =('Reprojeção ($)', 'sum'),
-        meta_seg_v=('Meta Seguinte ($)', 'sum'),
-        nec_liq_q =('Nec. Liquida (Q)', 'sum'),
-        skus      =('Produto', 'count'),
-    ).reset_index()
-    grp = grp.sort_values('meta_v', ascending=False).head(n)
-    result = []
-    for _, r in grp.iterrows():
-        result.append({
-            "marca":       str(r['Marca']),
-            "meta_v":      round(float(r['meta_v']), 2),
-            "real_v":      round(float(r['real_v']), 2),
-            "repr_v":      round(float(r['repr_v']), 2),
-            "meta_seg_v":  round(float(r['meta_seg_v']), 2),
-            "nec_liq_q":   round(float(r['nec_liq_q']), 0),
-            "skus":        int(r['skus']),
-        })
-    return result
+ruptura = e1_all[(e1_all['Estoque Total (Q)'] == 0) & (e1_all['Acum Realizado (Q)'] > 0)].copy()
+skus_com_venda = int((e1_all['Acum Realizado (Q)'] > 0).sum())
+taxa_rup = round(len(ruptura) / skus_com_venda * 100, 1) if skus_com_venda else 0
 
-# ─────────────────────────────────────────────
-# 9. MONTAR O data.json
-# ─────────────────────────────────────────────
-print("[INFO] Montando data.json...")
+rows_ruptura = []
+for _, r in ruptura.sort_values('Meta Atual ($)', ascending=False).iterrows():
+    rows_ruptura.append({
+        'sku': safe(r['Produto']), 'descricao': safe(r.get('Descrição', '')),
+        'categoria': safe(r.get('Categoria', '')), 'marca': safe(r.get('Marca', '')),
+        'comprador': safe(r.get('Comprador', '')),
+        'real_q': safe(r['Acum Realizado (Q)']), 'meta_q': safe(r['Meta Atual (Q)']),
+        'meta_v': safe(r['Meta Atual ($)']), 'nec_compra_q': safe(r['Est. Total x Est. Mínimo (Q)']),
+        'leadtime': safe(r.get('Leadtime Médio (Dias)', 0)),
+        'ped_pend_q': safe(r['Pedidos Pendentes (Q)']),
+    })
 
+# ─── 10. TOP MARCAS ──────────────────────────────────────────
+marcas = (e1_all.groupby('Marca').agg(
+    meta_v=('Meta Atual ($)', 'sum'), real_v=('Acum Realizado ($)', 'sum'),
+    repr_v=('Reprojeção ($)', 'sum'), meta_seg_v=('Meta Seguinte ($)', 'sum'), skus=('Produto', 'count')
+).reset_index().sort_values('meta_v', ascending=False).head(50))
+rows_marcas = [{'marca': str(r.Marca), 'meta_v': round(float(r.meta_v), 2),
+                'real_v': round(float(r.real_v), 2), 'repr_v': round(float(r.repr_v), 2),
+                'meta_seg_v': round(float(r.meta_seg_v), 2), 'skus': int(r.skus)}
+               for r in marcas.itertuples()]
+
+# ─── 11. MONTAR data.json ────────────────────────────────────
 data = {
-    "meta": {
-        "gerado_em":   datetime.now().strftime("%d/%m/%Y %H:%M"),
-        "arquivo_csv": os.path.basename(csv_path),
-        "total_linhas": len(df),
-        "empresas":    sorted(df['Empresa'].unique().tolist()),
+    'meta': {
+        'gerado_em': datetime.now().strftime('%d/%m/%Y %H:%M'),
+        'arquivo_csv': os.path.basename(csv_path),
+        'total_linhas': len(df),
     },
-    "kpis": {canal: kpis_canal(emp_id) for canal, emp_id in CANAIS.items()},
-    "ruptura": {canal: ruptura_stats(df[df['Empresa'] == emp_id]) for canal, emp_id in CANAIS.items()},
-    "top_marcas_atual":    {canal: top_marcas(emp_id) for canal, emp_id in CANAIS.items()},
-    "top_marcas_seguinte": {canal: top_marcas(emp_id) for canal, emp_id in CANAIS.items()},
-    "rows": {canal: build_canal(emp_id) for canal, emp_id in CANAIS.items()},
+    'compras': {
+        'total': {
+            'skus': len(compras),
+            'invest': round(invest_total, 2),
+            'fatur':  round(fatur_total, 2),
+            'lucro':  round(lucro_total, 2),
+            'margem': round(margem_total, 1),
+            'invest_atual': round(invest_atual, 2),
+            'invest_seg':   round(invest_seg, 2),
+            'fatur_atual':  round(fatur_atual, 2),
+            'fatur_seg':    round(fatur_seg, 2),
+            'pct_atual':    round(invest_atual / invest_total * 100, 1) if invest_total else 0,
+            'pct_seg':      round(invest_seg   / invest_total * 100, 1) if invest_total else 0,
+        },
+        'compradores': compradores,
+        'rows': rows_compras,
+    },
+    'ruptura': {
+        'total_skus': int(len(e1_all)),
+        'skus_zero': int((e1_all['Estoque Total (Q)'] == 0).sum()),
+        'skus_com_venda': skus_com_venda,
+        'skus_ruptura': len(ruptura),
+        'taxa_ruptura': taxa_rup,
+        'receita_risco': round(float(ruptura['Meta Atual ($)'].sum()), 2),
+        'rows': rows_ruptura,
+    },
+    'marcas': rows_marcas,
 }
 
-# ─────────────────────────────────────────────
-# 10. MONTAR O produtos.json (lookup rápido)
-# ─────────────────────────────────────────────
-print("[INFO] Montando produtos.json...")
-
-produtos = {}
-for _, r in df[df['Empresa'] == 1].iterrows():
-    sku = str(r['Produto']).strip()
-    produtos[sku] = {
-        "sku":       sku,
-        "descricao": str(r.get('Descrição', '')).strip(),
-        "categoria": str(r.get('Categoria', '')).strip(),
-        "marca":     str(r.get('Marca', '')).strip(),
-        "comprador": str(r.get('Comprador', '')).strip(),
-    }
-
-# ─────────────────────────────────────────────
-# 11. SALVAR
-# ─────────────────────────────────────────────
-with open("data.json", "w", encoding="utf-8") as f:
+with open('data.json', 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
 
-with open("produtos.json", "w", encoding="utf-8") as f:
+with open('produtos.json', 'w', encoding='utf-8') as f:
+    produtos = {str(r['Produto']): {'sku': str(r['Produto']), 'descricao': str(r.get('Descrição', '')),
+                'categoria': str(r.get('Categoria', '')), 'marca': str(r.get('Marca', '')),
+                'comprador': str(r.get('Comprador', ''))}
+                for _, r in df[df['Empresa'] == 1].iterrows()}
     json.dump(produtos, f, ensure_ascii=False, separators=(',', ':'))
 
-size_data    = os.path.getsize("data.json") / 1024
-size_prod    = os.path.getsize("produtos.json") / 1024
-print(f"[OK] data.json gerado: {size_data:.1f} KB")
-print(f"[OK] produtos.json gerado: {size_prod:.1f} KB")
-print(f"[OK] Gerado em: {data['meta']['gerado_em']}")
+print(f"[OK] data.json: {os.path.getsize('data.json')//1024} KB")
+print(f"[OK] produtos.json: {os.path.getsize('produtos.json')//1024} KB")
