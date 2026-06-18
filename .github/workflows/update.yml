@@ -4,7 +4,6 @@ on:
   push:
     paths:
       - 'planilha/*.csv'
-  workflow_dispatch:
 
 permissions:
   contents: write
